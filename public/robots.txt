@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Allow: /discover
+Allow: /rooms
+Allow: /room/*
+Allow: /playlists
+Allow: /playlist/*
+
+Sitemap: https://chillwithyt.app/sitemap.xml
