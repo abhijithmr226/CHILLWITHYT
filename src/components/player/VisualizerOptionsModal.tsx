@@ -126,7 +126,7 @@ export const VisualizerOptionsModal: React.FC = () => {
   ];
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-[95] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in pb-[calc(12px+env(safe-area-inset-bottom,0px))]">
       <div 
         className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-[#1A1A1A] border border-[#272727] rounded-3xl p-6 shadow-2xl space-y-6"
         onClick={(e) => e.stopPropagation()}

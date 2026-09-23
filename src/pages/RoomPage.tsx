@@ -595,7 +595,7 @@ export const RoomPage: React.FC<RoomPageProps> = ({ roomId, onNavigate }) => {
       {/* Floating DJ Panel if active */}
       {showDJPanel && (
         <div 
-          className="fixed inset-0 z-50 flex items-start justify-end p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fade-in"
+          className="fixed inset-0 z-[80] flex items-start justify-end p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fade-in"
           onClick={() => setShowDJPanel(false)}
         >
           <div className="relative mt-12 sm:mt-14" onClick={(e) => e.stopPropagation()}>

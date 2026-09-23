@@ -75,7 +75,7 @@ export const RoomsPage: React.FC<RoomsPageProps> = ({ onNavigate }) => {
   }, [state.rooms, selectedTag, searchQuery]);
 
   return (
-    <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-7 select-none">
+    <div className="p-4 sm:p-8 pb-36 sm:pb-12 max-w-7xl mx-auto space-y-7 select-none">
       {/* Header & Hero Callout */}
       <div className="bg-gradient-to-r from-[#212121] via-[#1A1A1A] to-[#212121] p-6 sm:p-8 rounded-3xl border border-[#2B2B2B] shadow-xl relative overflow-hidden">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
@@ -281,6 +281,18 @@ export const RoomsPage: React.FC<RoomsPageProps> = ({ onNavigate }) => {
           </button>
         </div>
       )}
+
+      {/* Mobile Floating Quick Action: Create Room (Docked Safely Above Mobile Mini-Player & Nav) */}
+      <div className="md:hidden fixed bottom-[calc(138px+env(safe-area-inset-bottom,0px))] right-4 z-30 pointer-events-auto animate-fade-in">
+        <button
+          onClick={() => store.setState({ isCreateRoomModalOpen: true })}
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-gradient-to-r from-[#FF0000] to-rose-600 text-white font-extrabold text-xs shadow-[0_8px_25px_rgba(255,0,0,0.45)] border border-white/20 active:scale-95 transition-all cursor-pointer"
+          title="Create a New Listening Room"
+        >
+          <Plus className="w-4 h-4" />
+          <span>New Room</span>
+        </button>
+      </div>
     </div>
   );
 };

@@ -208,13 +208,13 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onRoomCreated 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-fade-in select-none">
+    <div className="fixed inset-0 z-[95] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in select-none pb-[calc(12px+env(safe-area-inset-bottom,0px))]">
       <div
-        className="w-full max-w-2xl max-h-[92vh] bg-[#1A1A1E] border border-[#2F2F35] rounded-3xl shadow-2xl flex flex-col overflow-hidden text-white"
+        className="w-full max-w-2xl max-h-[90vh] bg-[#1A1A1E] border border-[#2F2F35] rounded-3xl shadow-2xl flex flex-col overflow-hidden text-white"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-[#2B2B30] flex items-center justify-between bg-[#141416]">
+        <div className="px-5 py-4 sm:px-6 border-b border-[#2B2B30] flex items-center justify-between bg-[#141416] shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-[#FF0000]/20 border border-[#FF0000]/40 flex items-center justify-center text-[#FF0000]">
               <Radio className="w-4 h-4" />
@@ -233,7 +233,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onRoomCreated 
         </div>
 
         {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
+        <form id="create-room-form" onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
           {/* 1. ROOM IDENTITY */}
           <div className="space-y-3.5">
             <div>
@@ -586,12 +586,15 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onRoomCreated 
               ))}
             </div>
           </div>
+        </form>
 
-          {/* Launch Room Button */}
+        {/* Sticky Launch Room Footer */}
+        <div className="p-4 sm:p-5 border-t border-[#2B2B30] bg-[#141416] shrink-0">
           <button
             type="submit"
+            form="create-room-form"
             disabled={isCreating || !name.trim()}
-            className="w-full py-3.5 bg-gradient-to-r from-[#FF0000] to-rose-600 hover:from-[#CC0000] hover:to-rose-700 text-white font-bold rounded-2xl transition shadow-[0_0_25px_rgba(255,0,0,0.4)] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm"
+            className="w-full py-3.5 bg-gradient-to-r from-[#FF0000] to-rose-600 hover:from-[#CC0000] hover:to-rose-700 text-white font-bold rounded-2xl transition shadow-[0_0_25px_rgba(255,0,0,0.4)] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm active:scale-98"
           >
             {isCreating ? (
               <>
@@ -605,7 +608,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onRoomCreated 
               </>
             )}
           </button>
-        </form>
+        </div>
       </div>
     </div>
   );

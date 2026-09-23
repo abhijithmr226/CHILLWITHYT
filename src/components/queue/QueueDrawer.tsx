@@ -211,7 +211,7 @@ export const QueueDrawer: React.FC<QueueDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-sm animate-fade-in flex justify-end">
+    <div className="fixed inset-0 z-[90] overflow-hidden bg-black/60 backdrop-blur-sm animate-fade-in flex justify-end pb-[env(safe-area-inset-bottom,0px)]">
       {/* Toast Feedback */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-[60] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1A1A1A] border border-[#333333] text-white text-xs font-semibold shadow-2xl animate-fade-in">

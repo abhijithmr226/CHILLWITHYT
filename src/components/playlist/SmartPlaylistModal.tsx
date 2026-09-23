@@ -160,7 +160,7 @@ export const SmartPlaylistModal: React.FC<SmartPlaylistModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-fade-in select-none"
+      className="fixed inset-0 z-[95] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in select-none pb-[calc(12px+env(safe-area-inset-bottom,0px))]"
       onClick={onClose}
     >
       <div 

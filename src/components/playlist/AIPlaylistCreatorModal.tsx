@@ -90,7 +90,7 @@ export const AIPlaylistCreatorModal: React.FC<AIPlaylistCreatorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in select-none">
+    <div className="fixed inset-0 z-[95] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in select-none pb-[calc(12px+env(safe-area-inset-bottom,0px))]">
       <div
         className="w-full max-w-xl rounded-3xl bg-[#1A1A1C] border border-[#2E2E32] shadow-2xl p-6 relative overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}

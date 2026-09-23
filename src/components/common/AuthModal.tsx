@@ -119,7 +119,7 @@ export const AuthModal: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+      className="fixed inset-0 z-[95] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md pb-[calc(12px+env(safe-area-inset-bottom,0px))]"
       onClick={close}
     >
       <div

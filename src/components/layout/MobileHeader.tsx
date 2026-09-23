@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useStore } from '../../store/useStore';
 import { pwaService } from '../../services/pwa/PwaService';
 import { resolveAvatar } from '../../utils/avatar';
-import { Search, Download, Users, LogIn, Sparkles } from 'lucide-react';
+import { Search, Download, Users, LogIn, Sparkles, Plus } from 'lucide-react';
 
 interface MobileHeaderProps {
   onNavigate: (path: string) => void;
@@ -20,7 +20,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({ onNavigate, onOpenIn
   }, []);
 
   return (
-    <div className="md:hidden sticky top-0 z-30 w-full h-14 bg-[#161618]/95 backdrop-blur-xl border-b border-[#27272A] px-4 flex items-center justify-between select-none shadow-sm">
+    <div className="md:hidden sticky top-0 z-30 w-full h-14 bg-[#161618]/95 backdrop-blur-xl border-b border-[#27272A] px-3 sm:px-4 flex items-center justify-between select-none shadow-sm">
       {/* Brand & Live Pill */}
       <div 
         onClick={() => onNavigate('/')}
@@ -37,7 +37,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({ onNavigate, onOpenIn
       {/* Prominent Search Bar Pill on Mobile */}
       <div
         onClick={() => onNavigate('/discover')}
-        className="flex-1 mx-2 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/10 border border-white/10 flex items-center gap-2 text-xs text-[#AAAAAA] cursor-pointer active:scale-98 transition shadow-inner"
+        className="flex-1 mx-2 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/10 border border-white/10 flex items-center gap-2 text-xs text-[#AAAAAA] cursor-pointer active:scale-98 transition shadow-inner min-w-0"
       >
         <Search className="w-3.5 h-3.5 text-red-500 shrink-0" />
         <span className="truncate text-[11px]">Search YouTube music...</span>
@@ -45,6 +45,15 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({ onNavigate, onOpenIn
 
       {/* Right Controls */}
       <div className="flex items-center gap-1.5 shrink-0">
+        {/* Quick Create Room Button */}
+        <button
+          onClick={() => store.setState({ isCreateRoomModalOpen: true })}
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-[#FF0000] to-rose-600 hover:from-[#CC0000] text-white text-[11px] font-bold shadow-md shadow-red-900/30 active:scale-95 transition cursor-pointer"
+          title="Create a Listening Room"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span className="hidden xs:inline">Room</span>
+        </button>
 
         {/* Live Rooms quick indicator */}
         {state.rooms.length > 0 && (

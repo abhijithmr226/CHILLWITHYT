@@ -191,7 +191,7 @@ export const AddMusicToRoomModal: React.FC<AddMusicToRoomModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[85] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-[95] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in pb-[calc(12px+env(safe-area-inset-bottom,0px))]">
       <div className="relative w-full max-w-2xl bg-[#161618] border border-[#2D2D32] rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
         
         {/* Header Bar */}
