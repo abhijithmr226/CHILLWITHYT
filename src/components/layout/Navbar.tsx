@@ -217,8 +217,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, onSearc
                 onClick={() => onNavigate(link.path)}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                   active
-                    ? 'bg-[#272727] text-white shadow-sm'
-                    : 'text-[#AAAAAA] hover:text-white hover:bg-[#272727]'
+                    ? 'bg-[#FF0000]/10 text-white border border-[#FF0000]/30 shadow-sm'
+                    : 'text-[#AAAAAA] hover:text-white hover:bg-[#272727] border border-transparent'
                 }`}
               >
                 {link.label}

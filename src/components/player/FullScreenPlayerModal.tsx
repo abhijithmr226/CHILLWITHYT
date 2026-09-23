@@ -566,7 +566,10 @@ export const FullScreenPlayerModal: React.FC = () => {
                 max={progress.duration || duration || 100}
                 value={progress.currentTime || 0}
                 onChange={handleProgressChange}
-                className="w-full h-1.5 bg-white/15 rounded-lg appearance-none cursor-pointer accent-[#FF0000] hover:h-2 transition-all"
+                className="w-full h-1.5 rounded-lg appearance-none cursor-pointer hover:h-2 transition-all"
+                style={{
+                  '--range-progress': `${((progress.currentTime || 0) / (progress.duration || duration || 100)) * 100}%`,
+                } as React.CSSProperties}
               />
               <div className="flex justify-between text-[11px] font-mono text-[#777777] px-0.5">
                 <span>{formatTime(progress.currentTime)}</span>
@@ -661,7 +664,10 @@ export const FullScreenPlayerModal: React.FC = () => {
                     step="0.01"
                     value={isMuted ? 0 : (volume ?? 1)}
                     onChange={(e) => audioManager.setVolume(parseFloat(e.target.value))}
-                    className="w-16 sm:w-20 accent-[#FF0000] cursor-pointer"
+                    className="w-16 sm:w-20 cursor-pointer"
+                    style={{
+                      '--range-progress': `${(isMuted ? 0 : (volume ?? 1)) * 100}%`,
+                    } as React.CSSProperties}
                   />
                 </div>
               </div>

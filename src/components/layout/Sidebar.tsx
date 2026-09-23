@@ -36,7 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate, onOpe
   ];
 
   return (
-    <aside className="w-64 bg-[#212121] border-r border-[#272727] flex flex-col justify-between p-4 h-[calc(100vh-4rem)] select-none shrink-0 overflow-y-auto hidden lg:flex">
+    <aside className="w-64 bg-[#212121] border-r border-[#272727] flex flex-col justify-between p-4 h-full select-none shrink-0 overflow-y-auto hidden lg:flex">
       <div className="space-y-6">
         {/* Main Nav Items */}
         <div className="space-y-1">
@@ -123,7 +123,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate, onOpe
                 onClick={() => onNavigate(`/playlist/${pl.id}`)}
                 className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs text-[#AAAAAA] hover:text-white hover:bg-[#272727] transition text-left"
               >
-                <img src={pl.coverUrl} alt={pl.name} className="w-5 h-5 rounded object-cover shrink-0" />
+                <img
+                  src={pl.coverUrl}
+                  alt={pl.name}
+                  className="w-5 h-5 rounded object-cover shrink-0"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
                 <span className="truncate">{pl.name}</span>
               </button>
             ))}

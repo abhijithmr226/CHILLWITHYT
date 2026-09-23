@@ -191,6 +191,9 @@ export const GlobalBottomPlayer: React.FC = () => {
               value={progress.currentTime || 0}
               onChange={handleProgressChange}
               className="flex-1"
+              style={{
+                '--range-progress': `${((progress.currentTime || 0) / (progress.duration || duration || 100)) * 100}%`,
+              } as React.CSSProperties}
             />
             <span className="text-[10px] font-mono text-[#717171] w-8 text-left">
               {formatTime(progress.duration || duration)}
@@ -268,6 +271,9 @@ export const GlobalBottomPlayer: React.FC = () => {
               value={isMuted ? 0 : (volume ?? 1)}
               onChange={(e) => audioManager.setVolume(parseFloat(e.target.value))}
               className="w-20"
+              style={{
+                '--range-progress': `${(isMuted ? 0 : (volume ?? 1)) * 100}%`,
+              } as React.CSSProperties}
             />
           </div>
 
