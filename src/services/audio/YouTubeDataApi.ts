@@ -1,4 +1,5 @@
 import { Song } from '../../types';
+import { rankSearchResults, cleanDisplayMetadata } from './SongNormalization';
 
 const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY || 'AIzaSyADsbonv9b2xYBXTHnTJhaEFBKx4dMRRXU';
 
@@ -67,34 +68,39 @@ export function parseTimeStringToSeconds(timeStr: string): number {
 }
 
 /**
- * Filter out YouTube Shorts, vertical clips, ringtones, and snippets.
- * Real full-length music songs are at least 80 seconds long.
+ * Filter out YouTube Shorts, vertical clips, ringtones, vlogs, reactions, and non-music noise.
  */
-export function isYouTubeShort(title: string, description: string, durationSeconds: number): boolean {
-  // Any video shorter than 80 seconds is considered a Short/teaser/snippet
-  if (durationSeconds > 0 && durationSeconds < 80) {
+export function isNonMusicVideo(title: string, description: string, durationSeconds: number): boolean {
+  // Real full-length music tracks are usually at least 75 seconds long
+  if (durationSeconds > 0 && durationSeconds < 75) {
+    return true;
+  }
+  // Exclude overly long files (e.g. 2+ hour full movie rips or podcasts unless requested)
+  if (durationSeconds > 1500) {
     return true;
   }
 
   const text = `${title} ${description}`.toLowerCase();
-  if (/#shorts?\b/.test(text)) return true;
-  if (/\bshorts\b/.test(text)) return true;
-  if (/\b#short\b/.test(text)) return true;
-  if (/\bwhatsapp status\b/.test(text)) return true;
-  if (/\bstatus video\b/.test(text)) return true;
-  if (/\b30\s*(?:sec|seconds|s)\b/.test(text)) return true;
-  if (/\breels?\b/.test(text)) return true;
-  if (/\btiktok\b/.test(text)) return true;
-  if (/\bringtone\b/.test(text)) return true;
-  if (/\bsnippet\b/.test(text)) return true;
-  if (/\bbgm status\b/.test(text)) return true;
-  if (/\blyrics status\b/.test(text)) return true;
+  if (/#shorts?\b/.test(text) || /\bshorts\b/.test(text) || /\b#short\b/.test(text)) return true;
+  if (/\bwhatsapp status\b/.test(text) || /\bstatus video\b/.test(text) || /\b30\s*(?:sec|seconds|s)\b/.test(text)) return true;
+  if (/\breels?\b/.test(text) || /\btiktok\b/.test(text) || /\bringtone\b/.test(text)) return true;
+  if (/\bsnippet\b/.test(text) || /\bbgm status\b/.test(text) || /\blyrics status\b/.test(text)) return true;
   if (/\bteaser\b/.test(text) && durationSeconds < 120) return true;
   if (/\btrailer\b/.test(text) && durationSeconds < 150) return true;
   if (/\bpromo\b/.test(text) && durationSeconds < 120) return true;
 
+  // Non-music content patterns
+  if (/\breaction\b/.test(text) && !/\bchemical reaction\b/.test(text)) return true;
+  if (/\bmovie review\b/.test(text) || /\bfilm review\b/.test(text)) return true;
+  if (/\binterview\b/.test(text) && durationSeconds > 300) return true;
+  if (/\bgameplay\b/.test(text) || /\bwalkthrough\b/.test(text)) return true;
+  if (/\bunboxing\b/.test(text)) return true;
+  if (/\bvlog\b/.test(text) && durationSeconds > 240) return true;
+
   return false;
 }
+
+export const isYouTubeShort = isNonMusicVideo;
 
 export interface PaginatedSearchResponse {
   songs: Song[];
@@ -126,7 +132,8 @@ export class YouTubeDataApiService {
       const fetchCount = Math.min(maxResults * 2, 50);
       const effectivePageToken = pageToken || (autoAdvancePage ? YouTubeDataApiService.queryPageTokens.get(query.trim().toLowerCase()) : undefined);
 
-      let searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=${fetchCount}&q=${encodeURIComponent(
+      // Search without restricting videoCategoryId=10 so soundtrack and regional music (often labeled Entertainment/Film) are never excluded
+      let searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=${fetchCount}&q=${encodeURIComponent(
         query
       )}&key=${API_KEY}`;
 
@@ -137,12 +144,22 @@ export class YouTubeDataApiService {
       const res = await fetch(searchUrl);
       if (!res.ok) {
         console.warn('YouTube Data API response error:', res.status, '— Falling back to unlimited InnerTube search');
-        return await YouTubeDataApiService.searchInnerTubeDetailed(query, maxResults, effectivePageToken);
+        const fallbackRes = await YouTubeDataApiService.searchInnerTubeDetailed(query, maxResults, effectivePageToken);
+        return {
+          songs: rankSearchResults(fallbackRes.songs, query).slice(0, maxResults),
+          nextPageToken: fallbackRes.nextPageToken,
+          totalResults: fallbackRes.totalResults,
+        };
       }
 
       const data = await res.json();
       if (!data.items || !Array.isArray(data.items)) {
-        return await YouTubeDataApiService.searchInnerTubeDetailed(query, maxResults, effectivePageToken);
+        const fallbackRes = await YouTubeDataApiService.searchInnerTubeDetailed(query, maxResults, effectivePageToken);
+        return {
+          songs: rankSearchResults(fallbackRes.songs, query).slice(0, maxResults),
+          nextPageToken: fallbackRes.nextPageToken,
+          totalResults: fallbackRes.totalResults,
+        };
       }
 
       // Update next page token in rotation map
@@ -156,25 +173,39 @@ export class YouTubeDataApiService {
         .map((item: any) => item.id?.videoId)
         .filter(Boolean);
 
-      // Fetch video details with durations and filter out Shorts
-      const songs = await YouTubeDataApiService.getVideoDetails(videoIds, data.items);
+      // Fetch video details with durations and filter out Shorts and non-music noise
+      let songs = await YouTubeDataApiService.getVideoDetails(videoIds, data.items);
       
-      if (songs.length === 0) {
-        const fallbackSongs = await YouTubeDataApiService.searchInnerTube(query, maxResults);
-        if (fallbackSongs.length > 0) {
-          return { songs: fallbackSongs.slice(0, maxResults) };
+      // If results are sparse (< 4 songs), attempt smart music enrichment
+      if (songs.length < 4 && !query.toLowerCase().includes('song') && !query.toLowerCase().includes('audio')) {
+        try {
+          const enriched = await YouTubeDataApiService.searchInnerTube(`${query} official audio song`, maxResults);
+          if (enriched.length > 0) {
+            songs = [...songs, ...enriched];
+          }
+        } catch {
+          // ignore
         }
       }
 
+      if (songs.length === 0) {
+        const fallbackSongs = await YouTubeDataApiService.searchInnerTube(query, maxResults);
+        if (fallbackSongs.length > 0) {
+          return { songs: rankSearchResults(fallbackSongs, query).slice(0, maxResults) };
+        }
+      }
+
+      const rankedSongs = rankSearchResults(songs, query);
+
       return {
-        songs: songs.slice(0, maxResults),
+        songs: rankedSongs.slice(0, maxResults),
         nextPageToken: data.nextPageToken,
         totalResults: data.pageInfo?.totalResults,
       };
     } catch (e) {
       console.warn('YouTube search exception, falling back to InnerTube:', e);
       const fallbackSongs = await YouTubeDataApiService.searchInnerTube(query, maxResults);
-      return { songs: fallbackSongs };
+      return { songs: rankSearchResults(fallbackSongs, query).slice(0, maxResults) };
     }
   }
 

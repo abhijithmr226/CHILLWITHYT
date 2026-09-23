@@ -10,7 +10,7 @@
 
 import { Song } from '../../types';
 import { YouTubeDataApiService } from './YouTubeDataApi';
-import { deduplicateSongs, normalizeSearchQuery } from './SongNormalization';
+import { deduplicateSongs, normalizeSearchQuery, rankSearchResults, cleanDisplayMetadata } from './SongNormalization';
 import { calculateCompositeScore, SongMetrics } from './RankingConfig';
 import { DEFAULT_TRACKS } from './DefaultMusicProvider';
 
@@ -243,9 +243,9 @@ class MusicServiceClass {
     const key = `search_${normalizedQuery.toLowerCase()}_${maxResults}`;
     if (bypassCache) {
       const raw = await YouTubeDataApiService.searchVideos(normalizedQuery, maxResults);
-      const deduplicated = deduplicateSongs(raw);
+      const ranked = rankSearchResults(raw, query);
       return {
-        data: deduplicated,
+        data: ranked,
         isStale: false,
         lastUpdatedLabel: 'Just now',
         fromCache: false,
@@ -255,14 +255,21 @@ class MusicServiceClass {
       let raw = await YouTubeDataApiService.searchVideos(normalizedQuery, maxResults);
       if (!raw || raw.length === 0) {
         const q = normalizedQuery.toLowerCase();
-        raw = DEFAULT_TRACKS.filter(
-          (s) =>
-            s.title.toLowerCase().includes(q) ||
-            s.artist.toLowerCase().includes(q) ||
-            (s.tags && s.tags.some((t) => t.toLowerCase().includes(q)))
-        );
+        const tokens = q.split(/\s+/).filter(Boolean);
+        raw = DEFAULT_TRACKS.filter((s) => {
+          const t = s.title.toLowerCase();
+          const a = s.artist.toLowerCase();
+          const alb = (s.album || '').toLowerCase();
+          return (
+            t.includes(q) ||
+            a.includes(q) ||
+            alb.includes(q) ||
+            (tokens.length > 1 && tokens.every((tok) => t.includes(tok) || a.includes(tok) || alb.includes(tok))) ||
+            (s.tags && s.tags.some((tag) => tag.toLowerCase().includes(q)))
+          );
+        });
       }
-      return deduplicateSongs(raw);
+      return rankSearchResults(raw, query);
     });
   }
 

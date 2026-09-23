@@ -135,6 +135,101 @@ export function isDuplicateTrack(a: Song, b: Song): boolean {
 }
 
 /**
+ * Clean track title and artist for sleek Spotify/Apple Music-grade UI display
+ */
+export function cleanDisplayMetadata(song: Song): Song {
+  let title = cleanSongTitle(song.title);
+  let artist = normalizeArtistName(song.artist);
+
+  // Check if title has "Artist - Title" format (very common in official YouTube uploads)
+  const hyphenMatch = title.match(/^([^\-]+)\s*-\s*([^\-]+)$/);
+  if (hyphenMatch && hyphenMatch[1] && hyphenMatch[2]) {
+    const candidateArtist = hyphenMatch[1].trim();
+    const candidateTitle = hyphenMatch[2].trim();
+    // If the channel is a generic label (T-Series, Sony, VEVO), use the extracted artist
+    if (
+      /vevo|records|music|official|channel|t-series|tips|zee|speed|saregama|aditya/i.test(artist) ||
+      candidateArtist.length < artist.length
+    ) {
+      artist = candidateArtist;
+      title = candidateTitle;
+    }
+  }
+
+  // Handle Indian movie soundtrack title format: "Song Name | Movie Name | Cast"
+  const pipeMatch = title.split('|');
+  if (pipeMatch.length >= 2) {
+    const primaryTitle = pipeMatch[0].trim();
+    const secondaryInfo = pipeMatch[1].trim();
+    // If secondary part looks like a movie name, format as "Song (Movie)"
+    if (secondaryInfo && secondaryInfo.length < 30 && !/official|video|audio|lyric/i.test(secondaryInfo)) {
+      title = `${primaryTitle} (${secondaryInfo})`;
+    } else {
+      title = primaryTitle;
+    }
+  }
+
+  // Ensure high quality artwork URL
+  let artwork = song.artwork;
+  if (song.sourceId && (!artwork || artwork.includes('default.jpg') && !artwork.includes('hqdefault') && !artwork.includes('maxresdefault'))) {
+    artwork = `https://img.youtube.com/vi/${song.sourceId}/hqdefault.jpg`;
+  }
+
+  return {
+    ...song,
+    title: title || song.title,
+    artist: artist || song.artist,
+    artwork,
+  };
+}
+
+/**
+ * Compute intelligent relevance score for music search query
+ */
+export function calculateMusicRelevanceScore(song: Song, query: string): number {
+  let score = 100;
+  const titleLower = song.title.toLowerCase();
+  const artistLower = song.artist.toLowerCase();
+  const queryLower = query.toLowerCase().trim();
+  const queryTokens = queryLower.split(/\s+/).filter((t) => t.length > 1);
+
+  // 1. Exact query match in title or artist
+  if (titleLower.includes(queryLower)) {
+    score += 100;
+  }
+  if (artistLower.includes(queryLower)) {
+    score += 80;
+  }
+
+  // 2. Token overlap
+  for (const token of queryTokens) {
+    if (titleLower.includes(token)) score += 25;
+    if (artistLower.includes(token)) score += 20;
+    if (song.tags && song.tags.some((t) => t.toLowerCase().includes(token))) score += 15;
+  }
+
+  // 3. Official music authority signals
+  const rawText = `${song.title} ${song.artist}`.toLowerCase();
+  if (/\bofficial\s+(?:audio|music\s+video|video)\b/i.test(rawText)) score += 40;
+  if (/\b(?:vevo|- topic|records|music|soundtracks?)\b/i.test(song.artist)) score += 35;
+  if (/\blyric(?:s|\s+video)?\b/i.test(rawText)) score += 20;
+
+  // 4. Music duration sweet spot (120s - 360s = 2 to 6 mins)
+  if (song.duration >= 130 && song.duration <= 360) {
+    score += 30;
+  } else if (song.duration < 80 || song.duration > 700) {
+    score -= 40;
+  }
+
+  // 5. Demote clickbait / noisy non-music keywords
+  if (/\b(?:whatsapp|status|ringtone|short|reels?|bgm status|cover by|parody)\b/i.test(rawText)) {
+    score -= 90;
+  }
+
+  return score;
+}
+
+/**
  * Deduplicate a song list while keeping the highest quality version
  * (Prefers official audio or higher view count if metadata exists)
  */
@@ -163,6 +258,26 @@ export function deduplicateSongs<T extends Song>(songs: T[]): T[] {
   }
 
   return results;
+}
+
+/**
+ * Clean, score, rank, and deduplicate search results for top-tier music experience
+ */
+export function rankSearchResults(songs: Song[], query: string): Song[] {
+  if (!songs || songs.length === 0) return [];
+
+  // 1. Clean display metadata
+  const cleaned = songs.map(cleanDisplayMetadata);
+
+  // 2. Deduplicate
+  const deduplicated = deduplicateSongs(cleaned);
+
+  // 3. Score and sort by relevance
+  return deduplicated.sort((a, b) => {
+    const scoreB = calculateMusicRelevanceScore(b, query);
+    const scoreA = calculateMusicRelevanceScore(a, query);
+    return scoreB - scoreA;
+  });
 }
 
 /**
