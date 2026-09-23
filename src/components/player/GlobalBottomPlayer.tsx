@@ -70,7 +70,7 @@ export const GlobalBottomPlayer: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#212121] border-t border-[#272727] select-none transition-all">
+    <div className="fixed bottom-0 left-0 right-0 z-[60] bg-[#212121] border-t border-[#272727] select-none transition-all">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 px-4 py-2.5 sm:px-6">
         {/* Left: Track Information */}
         <div className="flex items-center gap-3 w-1/4 min-w-[180px]">

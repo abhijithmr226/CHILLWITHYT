@@ -10,6 +10,7 @@ import {
 import { Song } from '../types';
 import { MusicService } from '../services/audio/MusicService';
 import { ArtworkImage } from '../utils/artwork';
+import { ResponsiveAdBanner, AdSlot } from '../components/ads/AdSlot';
 import {
   Play,
   Plus,
@@ -499,6 +500,9 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
           </button>
         ))}
       </div>
+
+      {/* ── SPONSORED BANNER (ADAPTIVE & NON-INTRUSIVE) ── */}
+      <ResponsiveAdBanner className="my-4" />
 
       {/* ── Tailored Skeleton Loading State ── */}
       {loading && (

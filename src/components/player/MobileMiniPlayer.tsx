@@ -22,7 +22,7 @@ export const MobileMiniPlayer: React.FC = () => {
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="md:hidden fixed bottom-[calc(68px+env(safe-area-inset-bottom,0px))] left-2.5 right-2.5 z-30 bg-[#1E1E22]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.6)] overflow-hidden animate-slide-up select-none">
+    <div className="md:hidden fixed bottom-[calc(68px+env(safe-area-inset-bottom,0px))] left-2.5 right-2.5 z-[60] bg-[#1E1E22]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.6)] overflow-hidden animate-slide-up select-none">
       {/* Mini Progress Bar */}
       <div className="w-full bg-white/10 h-[2.5px]">
         <div

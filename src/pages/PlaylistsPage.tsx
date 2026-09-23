@@ -11,6 +11,7 @@ import { SmartPlaylistModal } from '../components/playlist/SmartPlaylistModal';
 import { StorageService } from '../services/storage/StorageService';
 import { ListMusic, Plus, Play, Users, FolderDown, Loader2, Check, ExternalLink, Sparkles, Wand2, Trash2, Upload, Image as ImageIcon } from 'lucide-react';
 import { Playlist, Song } from '../types';
+import { ResponsiveAdBanner } from '../components/ads/AdSlot';
 
 interface PlaylistsPageProps {
   onNavigate: (path: string) => void;
@@ -259,6 +260,9 @@ export const PlaylistsPage: React.FC<PlaylistsPageProps> = ({ onNavigate }) => {
           YouTube Curated Playlists ({curatedYtPlaylists.length})
         </button>
       </div>
+
+      {/* ── SPONSORED BANNER (NON-INTRUSIVE) ── */}
+      <ResponsiveAdBanner className="my-4" />
 
       {/* Import YouTube Playlist Modal */}
       {isImporting && (

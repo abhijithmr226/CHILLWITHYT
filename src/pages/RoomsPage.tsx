@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore';
 import { Room } from '../types';
 import { resolveAvatar } from '../utils/avatar';
 import { RoomPlaylistThumbnail } from '../components/room/RoomPlaylistThumbnail';
+import { ResponsiveAdBanner } from '../components/ads/AdSlot';
 import { 
   Radio, 
   Plus, 
@@ -159,6 +160,9 @@ export const RoomsPage: React.FC<RoomsPageProps> = ({ onNavigate }) => {
           ))}
         </div>
       </div>
+
+      {/* ── SPONSORED BANNER (NON-INTRUSIVE) ── */}
+      <ResponsiveAdBanner className="my-4" />
 
       {/* Rooms Grid */}
       {filteredRooms.length > 0 ? (

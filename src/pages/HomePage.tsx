@@ -14,6 +14,7 @@ import {
 import { SmartPlaylistModal } from '../components/playlist/SmartPlaylistModal';
 import { radioEngine, LANGUAGE_RADIO_STATIONS } from '../services/audio/RadioEngine';
 import { ArtworkImage } from '../utils/artwork';
+import { ResponsiveAdBanner } from '../components/ads/AdSlot';
 import {
   Play,
   Flame,
@@ -247,6 +248,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           })}
         </div>
       </section>
+
+      {/* ─── SPONSORED BANNER (NON-INTRUSIVE) ─────────────────────────────── */}
+      <ResponsiveAdBanner className="my-2" />
 
       {/* ─── 3. MADE FOR YOU (PERSONALIZED DAILY MIXES) ─────────────────────── */}
       <section className="space-y-3">
