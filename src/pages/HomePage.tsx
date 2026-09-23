@@ -118,10 +118,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     setLoadingTrending(false);
   };
 
-  // Continue listening source: recent history or curated starters
+  // Continue listening source: only real history played by the user
   const continueListeningTracks: Song[] = state.history && state.history.length > 0
-    ? state.history.map((h) => h.song).slice(0, 8)
-    : DEFAULT_TRACKS.slice(0, 6);
+    ? state.history.map((h) => h.song).filter((s): s is Song => !!(s && s.id)).slice(0, 8)
+    : [];
 
 
   const currentRegionMeta = YOUTUBE_REGIONS.find((r) => r.code === selectedRegion) || YOUTUBE_REGIONS[0];
@@ -212,72 +212,74 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         onNavigate={onNavigate}
       />
 
-      {/* ─── 2. CONTINUE LISTENING (MOBILE CAROUSEL / DESKTOP GRID) ─────────── */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-red-500" />
-            <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-              Continue Listening
-            </h2>
+      {/* ─── 2. CONTINUE LISTENING (ONLY WHEN REAL USER HISTORY EXISTS) ─────────── */}
+      {continueListeningTracks.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-red-500" />
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                Continue Listening
+              </h2>
+            </div>
+            <button
+              onClick={() => onNavigate('/history')}
+              className="text-xs text-[#AAAAAA] hover:text-white font-medium flex items-center gap-1 cursor-pointer transition"
+            >
+              <span>History</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
-          <button
-            onClick={() => onNavigate('/history')}
-            className="text-xs text-[#AAAAAA] hover:text-white font-medium flex items-center gap-1 cursor-pointer transition"
-          >
-            <span>History</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
 
-        {/* Horizontal Carousel on Mobile; Responsive Grid on Desktop */}
-        <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 pb-2 sm:pb-0 overscroll-x-contain touch-pan-x no-scrollbar">
-          {continueListeningTracks.map((song) => {
-            const isJustQueued = addedQueueSongId === song.id;
-            return (
-              <div
-                key={`cont-${song.id}`}
-                onClick={() => handlePlaySong(song, continueListeningTracks)}
-                className="group cursor-pointer rounded-2xl bg-[#18181A] hover:bg-[#222226] border border-[#27272A] hover:border-[#3E3E44] p-2.5 transition duration-200 flex flex-col justify-between shadow-sm relative overflow-hidden min-w-[145px] sm:min-w-0 shrink-0"
-              >
-                {/* 16:9 Thumbnail Box */}
-                <div className="relative aspect-video rounded-xl overflow-hidden mb-2 bg-neutral-900 border border-white/10 shadow-sm">
-                  <ArtworkImage
-                    song={song}
-                    alt={song.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
-                    <div className="w-8 h-8 rounded-full bg-[#FF0000] text-white flex items-center justify-center shadow-lg">
-                      <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+          {/* Horizontal Carousel on Mobile; Responsive Grid on Desktop */}
+          <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 pb-2 sm:pb-0 overscroll-x-contain touch-pan-x no-scrollbar">
+            {continueListeningTracks.map((song) => {
+              const isJustQueued = addedQueueSongId === song.id;
+              return (
+                <div
+                  key={`cont-${song.id}`}
+                  onClick={() => handlePlaySong(song, continueListeningTracks)}
+                  className="group cursor-pointer rounded-2xl bg-[#18181A] hover:bg-[#222226] border border-[#27272A] hover:border-[#3E3E44] p-2.5 transition duration-200 flex flex-col justify-between shadow-sm relative overflow-hidden min-w-[145px] sm:min-w-0 shrink-0"
+                >
+                  {/* 16:9 Thumbnail Box */}
+                  <div className="relative aspect-video rounded-xl overflow-hidden mb-2 bg-neutral-900 border border-white/10 shadow-sm">
+                    <ArtworkImage
+                      song={song}
+                      alt={song.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                      <div className="w-8 h-8 rounded-full bg-[#FF0000] text-white flex items-center justify-center shadow-lg">
+                        <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="min-w-0">
-                  <h4 className="text-xs font-bold text-white truncate group-hover:text-red-400 transition">
-                    {song.title}
-                  </h4>
-                  <p className="text-[11px] text-[#AAAAAA] truncate mt-0.5">{song.artist}</p>
-                </div>
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-bold text-white truncate group-hover:text-red-400 transition">
+                      {song.title}
+                    </h4>
+                    <p className="text-[11px] text-[#AAAAAA] truncate mt-0.5">{song.artist}</p>
+                  </div>
 
-                <div className="flex items-center justify-between pt-2 mt-1.5 border-t border-white/5">
-                  <span className="text-[10px] font-mono text-[#888888]">
-                    {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}
-                  </span>
-                  <button
-                    onClick={(e) => handleAddToQueue(e, song)}
-                    className="p-1 rounded-lg text-[#AAAAAA] hover:text-white hover:bg-white/10 transition cursor-pointer"
-                    title="Add to Queue"
-                  >
-                    {isJustQueued ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Plus className="w-3.5 h-3.5" />}
-                  </button>
+                  <div className="flex items-center justify-between pt-2 mt-1.5 border-t border-white/5">
+                    <span className="text-[10px] font-mono text-[#888888]">
+                      {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}
+                    </span>
+                    <button
+                      onClick={(e) => handleAddToQueue(e, song)}
+                      className="p-1 rounded-lg text-[#AAAAAA] hover:text-white hover:bg-white/10 transition cursor-pointer"
+                      title="Add to Queue"
+                    >
+                      {isJustQueued ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Plus className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* ─── SPONSORED BANNER (NON-INTRUSIVE) ─────────────────────────────── */}
       <ResponsiveAdBanner className="my-2" />

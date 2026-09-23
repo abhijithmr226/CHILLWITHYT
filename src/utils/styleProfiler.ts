@@ -114,26 +114,26 @@ export const CURATED_OUR_FAVOURITES: {
     badge: 'Chart Topper',
   },
   {
-    song: DEFAULT_TRACKS.find(t => t.tags?.includes('Tamil')) || DEFAULT_TRACKS[3], // Naa Ready / Hukum
+    song: DEFAULT_TRACKS.find(t => t.tags?.includes('Tamil')) || DEFAULT_TRACKS[3] || DEFAULT_TRACKS[0],
     curatorNote: 'Pure Anirudh rockstar energy with stadium-level percussion',
     badge: 'High Voltage',
   },
   {
-    song: DEFAULT_TRACKS.find(t => t.tags?.includes('Hindi')) || DEFAULT_TRACKS[4], // Arijit / Pritam
+    song: DEFAULT_TRACKS.find(t => t.tags?.includes('Hindi')) || DEFAULT_TRACKS[4] || DEFAULT_TRACKS[0],
     curatorNote: 'Timeless acoustic soul that hits straight in the heart',
     badge: 'Soulful Melody',
   },
   {
-    song: DEFAULT_TRACKS.find(t => t.tags?.includes('Chill') || t.tags?.includes('Acoustic')) || DEFAULT_TRACKS[3],
+    song: DEFAULT_TRACKS.find(t => t.tags?.includes('Chill') || t.tags?.includes('Acoustic')) || DEFAULT_TRACKS[3] || DEFAULT_TRACKS[0],
     curatorNote: 'Smooth sunset melodies for unwinding after a long day',
     badge: 'Late Night Chill',
   },
   {
-    song: DEFAULT_TRACKS.find(t => t.tags?.includes('Retro')) || DEFAULT_TRACKS[13] || DEFAULT_TRACKS[2],
+    song: DEFAULT_TRACKS.find(t => t.tags?.includes('Retro')) || DEFAULT_TRACKS[13] || DEFAULT_TRACKS[2] || DEFAULT_TRACKS[0],
     curatorNote: 'Warm golden brass & vintage nostalgic instrumentation',
     badge: 'Evergreen Vibe',
   },
-];
+].filter((item): item is { song: Song; curatorNote: string; badge: string } => !!(item && item.song && item.song.id));
 
 /**
  * Analyzes search history, user preferences, liked tracks, and play history
@@ -145,22 +145,33 @@ export function analyzeUserStyle(
   history: { song: Song }[] = [],
   likedSongs: Song[] = []
 ): StylePersona {
-  const hasSearches = searchHistory.length > 0;
-  const hasPrefs = preferences && preferences.completedOnboarding;
-  const hasHistory = history.length > 0;
-  const hasLikes = likedSongs.length > 0;
+  const safeSearches = (searchHistory || []).filter(Boolean);
+  const safeHistory = (history || []).filter(h => h && h.song && h.song.id);
+  const safeLiked = (likedSongs || []).filter(s => s && s.id);
+  const hasSearches = safeSearches.length > 0;
+  const hasPrefs = !!(preferences && preferences.completedOnboarding);
+  const hasHistory = safeHistory.length > 0;
+  const hasLikes = safeLiked.length > 0;
 
   // Aggregate all text signals from search history, titles, artists, and tags
   const signals: string[] = [
-    ...searchHistory.map(s => s.toLowerCase()),
-    ...(preferences?.genres?.map(g => g.toLowerCase()) || []),
-    ...(preferences?.languages?.map(l => l.toLowerCase()) || []),
-    ...(preferences?.artists?.map(a => a.toLowerCase()) || []),
-    ...likedSongs.flatMap(s => [s.title.toLowerCase(), s.artist.toLowerCase(), ...(s.tags?.map(t => t.toLowerCase()) || [])]),
-    ...history.slice(0, 15).flatMap(h => [h.song.title.toLowerCase(), h.song.artist.toLowerCase(), ...(h.song.tags?.map(t => t.toLowerCase()) || [])]),
+    ...safeSearches.map(s => String(s).toLowerCase()),
+    ...(preferences?.genres || []).filter(Boolean).map(g => String(g).toLowerCase()),
+    ...(preferences?.languages || []).filter(Boolean).map(l => String(l).toLowerCase()),
+    ...(preferences?.artists || []).filter(Boolean).map(a => String(a).toLowerCase()),
+    ...safeLiked.flatMap(s => [
+      s.title ? String(s.title).toLowerCase() : '',
+      s.artist ? String(s.artist).toLowerCase() : '',
+      ...(Array.isArray(s.tags) ? s.tags.filter(Boolean).map(t => String(t).toLowerCase()) : [])
+    ]),
+    ...safeHistory.slice(0, 15).flatMap(h => [
+      h.song.title ? String(h.song.title).toLowerCase() : '',
+      h.song.artist ? String(h.song.artist).toLowerCase() : '',
+      ...(Array.isArray(h.song.tags) ? h.song.tags.filter(Boolean).map(t => String(t).toLowerCase()) : [])
+    ]),
   ];
 
-  const fullText = signals.join(' ');
+  const fullText = signals.filter(Boolean).join(' ');
 
   // If user is brand new with zero history or searches
   if (!hasSearches && !hasPrefs && !hasHistory && !hasLikes) {
@@ -176,7 +187,7 @@ export function analyzeUserStyle(
         'Arijit Singh soulful acoustic',
         'Lofi hip hop chill beats',
       ],
-      recommendedTracks: CURATED_OUR_FAVOURITES.map(f => f.song),
+      recommendedTracks: CURATED_OUR_FAVOURITES.map(f => f.song).filter(Boolean),
       isDefault: true,
     };
   }

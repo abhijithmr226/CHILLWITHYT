@@ -129,19 +129,10 @@ class Store {
     roomReactions: [],
     roomQueue: [],
     playlists: DEFAULT_PLAYLISTS,
-    likedSongIds: ['track-1', 'track-2', 'track-7'],
-    likedSongs: DEFAULT_TRACKS.filter(t => ['track-1', 'track-2', 'track-7'].includes(t.id)),
-    lastLikedRecommendation: {
-      seedSong: DEFAULT_TRACKS[0],
-      recommendations: DEFAULT_TRACKS.slice(1, 7),
-      updatedAt: Date.now(),
-    },
-    history: [
-      { song: DEFAULT_TRACKS[0], playedAt: '2 hours ago' },
-      { song: DEFAULT_TRACKS[1], playedAt: '3 hours ago' },
-      { song: DEFAULT_TRACKS[6], playedAt: 'Yesterday' },
-      { song: DEFAULT_TRACKS[7], playedAt: 'Yesterday' },
-    ],
+    likedSongIds: [],
+    likedSongs: [],
+    lastLikedRecommendation: null,
+    history: [],
     searchHistory: [],
     visualizerConfig: initialVisualizerConfig,
     theme: 'dark',
@@ -201,7 +192,13 @@ class Store {
 
       const savedLiked = localStorage.getItem(STORAGE_KEYS.LIKED);
       if (savedLiked) {
-        this.state.likedSongIds = JSON.parse(savedLiked);
+        try {
+          const parsed = JSON.parse(savedLiked);
+          if (Array.isArray(parsed)) {
+            // Strip out old mock dummy track IDs
+            this.state.likedSongIds = parsed.filter(id => !['track-1', 'track-2', 'track-7'].includes(id));
+          }
+        } catch {}
       }
 
       const savedLikedData = localStorage.getItem(STORAGE_KEYS.LIKED_SONGS_DATA);
@@ -209,7 +206,7 @@ class Store {
         try {
           const parsed = JSON.parse(savedLikedData);
           if (Array.isArray(parsed)) {
-            this.state.likedSongs = parsed;
+            this.state.likedSongs = parsed.filter(s => s && s.id && !['track-1', 'track-2', 'track-7'].includes(s.id));
           }
         } catch {}
       } else {
@@ -239,8 +236,9 @@ class Store {
       if (savedHistory) {
         try {
           const parsed = JSON.parse(savedHistory);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            this.state.history = parsed;
+          if (Array.isArray(parsed)) {
+            // Strip out old mock dummy template items
+            this.state.history = parsed.filter(h => h && h.song && h.song.id && !['Yesterday', '2 hours ago', '3 hours ago'].includes(h.playedAt));
           }
         } catch {}
       }
@@ -422,25 +420,28 @@ class Store {
       completedAt: timestamp,
     };
 
-    // Synthesize 3 customized playlists tailored to the user's choices
-    const primaryLang = prefs.primaryLanguage || prefs.languages[0] || 'My';
-    const topArtist = prefs.artists[0] || 'Top Artist';
-    const topGenre = prefs.genres[0] || 'Late Night Chill';
+    const safeLanguages = Array.isArray(prefs?.languages) && prefs.languages.length > 0 ? prefs.languages : ['Malayalam', 'Tamil'];
+    const safeGenres = Array.isArray(prefs?.genres) && prefs.genres.length > 0 ? prefs.genres : ['Late Night Chill'];
+    const safeArtists = Array.isArray(prefs?.artists) && prefs.artists.length > 0 ? prefs.artists : ['Sushin Shyam', 'Anirudh Ravichander'];
+
+    const primaryLang = prefs?.primaryLanguage || safeLanguages[0] || 'My';
+    const topArtist = safeArtists[0] || 'Top Artist';
+    const topGenre = safeGenres[0] || 'Late Night Chill';
 
     const allTracks = [...DEFAULT_TRACKS];
 
     // Filter tracks matching chosen languages
-    const langLower = prefs.languages.map(l => l.toLowerCase());
+    const langLower = safeLanguages.map(l => String(l).toLowerCase());
     const langTracks = allTracks.filter(s => 
-      s.tags?.some(t => langLower.includes(t.toLowerCase())) ||
-      langLower.some(l => s.title.toLowerCase().includes(l) || s.artist.toLowerCase().includes(l))
+      s && (s.tags?.some(t => langLower.includes(String(t).toLowerCase())) ||
+      langLower.some(l => s.title?.toLowerCase().includes(l) || s.artist?.toLowerCase().includes(l)))
     );
     const blendSongs = langTracks.length >= 3 ? langTracks.slice(0, 10) : allTracks.slice(0, 8);
 
     // Filter tracks matching top artists
-    const artistLower = prefs.artists.map(a => a.toLowerCase());
+    const artistLower = safeArtists.map(a => String(a).toLowerCase());
     const artistTracks = allTracks.filter(s => 
-      artistLower.some(a => s.artist.toLowerCase().includes(a) || s.title.toLowerCase().includes(a))
+      s && artistLower.some(a => s.artist?.toLowerCase().includes(a) || s.title?.toLowerCase().includes(a))
     );
     const radioSongs = artistTracks.length >= 2 ? artistTracks.slice(0, 10) : allTracks.slice(2, 9);
 
