@@ -35,6 +35,8 @@ export const KeyboardShortcutsModal: React.FC = () => {
         store.setState({ isQueueDrawerOpen: !store.getState().isQueueDrawerOpen });
       } else if (e.key === '?') {
         store.setState({ isShortcutsModalOpen: !store.getState().isShortcutsModalOpen });
+      } else if (e.key === 'Escape' && store.getState().isShortcutsModalOpen) {
+        store.setState({ isShortcutsModalOpen: false });
       }
     };
 
@@ -56,7 +58,10 @@ export const KeyboardShortcutsModal: React.FC = () => {
   ];
 
   return (
-    <div className="fixed inset-0 z-[95] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in pb-[calc(12px+env(safe-area-inset-bottom,0px))]">
+    <div
+      className="fixed inset-0 z-[95] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in pb-[calc(12px+env(safe-area-inset-bottom,0px))]"
+      onClick={() => store.setState({ isShortcutsModalOpen: false })}
+    >
       <div
         className="w-full max-w-md bg-[#212121] border border-[#272727] rounded-2xl p-6 shadow-2xl space-y-5"
         onClick={(e) => e.stopPropagation()}

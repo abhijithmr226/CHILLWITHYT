@@ -36,7 +36,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({ onNavigate, onOpenIn
 
       {/* Prominent Search Bar Pill on Mobile */}
       <div
-        onClick={() => onNavigate('/discover')}
+        onClick={() => onNavigate('/discover?focus=search')}
         className="flex-1 mx-2 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/10 border border-white/10 flex items-center gap-2 text-xs text-[#AAAAAA] cursor-pointer active:scale-98 transition shadow-inner min-w-0"
       >
         <Search className="w-3.5 h-3.5 text-red-500 shrink-0" />

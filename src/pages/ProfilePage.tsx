@@ -181,7 +181,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate }) => {
                     onClick={() => onNavigate(`/playlist/${pl.id}`)}
                     className="group cursor-pointer rounded-2xl p-3 bg-[#212121] hover:bg-[#272727] border border-[#272727] hover:border-[#383838] transition"
                   >
-                    <img src={pl.coverUrl} alt={pl.name} className="w-full aspect-video rounded-xl object-cover mb-2" />
+                    <img
+                      src={pl.coverUrl}
+                      alt={pl.name}
+                      className="w-full aspect-video rounded-xl object-cover mb-2 bg-[#272727]"
+                      onError={(e) => {
+                        const t = e.target as HTMLImageElement;
+                        t.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(pl.name)}&background=272727&color=FF4D4D&size=200&font-size=0.4&bold=true`;
+                      }}
+                    />
                     <h4 className="text-xs font-bold text-white truncate">{pl.name}</h4>
                     <p className="text-[10px] text-[#AAAAAA] truncate mt-0.5">{pl.songsCount} tracks</p>
                   </div>
@@ -248,7 +256,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate }) => {
                     className="flex items-center justify-between p-3 rounded-xl bg-[#212121] hover:bg-[#272727] border border-[#272727] cursor-pointer transition group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <img src={item.song.artwork} alt={item.song.title} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                      <img
+                        src={item.song.artwork}
+                        alt={item.song.title}
+                        className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#272727]"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      />
                       <div className="min-w-0">
                         <p className="text-xs font-semibold text-white truncate group-hover:text-[#FF4D4D] transition">
                           {item.song.title}
@@ -256,7 +269,23 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate }) => {
                         <p className="text-[11px] text-[#AAAAAA] truncate">{item.song.artist}</p>
                       </div>
                     </div>
-                    <span className="text-[11px] font-mono text-[#717171] shrink-0">{item.playedAt}</span>
+                    <span className="text-[11px] font-mono text-[#717171] shrink-0 ml-2">
+                      {(() => {
+                        try {
+                          const d = new Date(item.playedAt);
+                          if (isNaN(d.getTime())) return item.playedAt;
+                          const now = new Date();
+                          const diffMs = now.getTime() - d.getTime();
+                          const diffMins = Math.floor(diffMs / 60000);
+                          const diffHrs = Math.floor(diffMs / 3600000);
+                          if (diffMins < 1) return 'Just now';
+                          if (diffMins < 60) return `${diffMins}m ago`;
+                          if (diffHrs < 24) return `${diffHrs}h ago`;
+                          if (diffHrs < 48) return 'Yesterday';
+                          return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                        } catch { return item.playedAt; }
+                      })()}
+                    </span>
                   </div>
                 ))}
               </div>
