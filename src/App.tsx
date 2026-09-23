@@ -9,6 +9,7 @@ import { MobileHeader } from './components/layout/MobileHeader';
 import { InstallAppPrompt } from './components/pwa/InstallAppPrompt';
 import { GlobalBottomPlayer } from './components/player/GlobalBottomPlayer';
 import { MobileMiniPlayer } from './components/player/MobileMiniPlayer';
+import { ResumeSessionPrompt } from './components/player/ResumeSessionPrompt';
 import { FullScreenPlayerModal } from './components/player/FullScreenPlayerModal';
 import { VisualizerOptionsModal } from './components/player/VisualizerOptionsModal';
 import { CreateRoomModal } from './components/room/CreateRoomModal';
@@ -232,6 +233,9 @@ export function App() {
       {viewMode === 'app' && !isRoomView && (
         <MobileNav currentPath={currentPath} onNavigate={navigate} />
       )}
+
+      {/* Resume Session & Liked Songs Opt-in Prompt */}
+      {viewMode === 'app' && !isRoomView && <ResumeSessionPrompt />}
 
       {/* Radio HUD — song transition overlay (global, above everything) */}
       <RadioHUD variant="overlay" />

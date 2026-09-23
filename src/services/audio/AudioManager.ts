@@ -90,7 +90,7 @@ class AudioManager {
     queue: [],
     queueIndex: -1,
     isBuffering: false,
-    autoplay: true, // Spotify-style autoplay on by default
+    autoplay: false, // Default to user-controlled playback (no unprompted autoplay)
   };
 
   private listeners: Set<PlaybackListener> = new Set();
@@ -110,7 +110,7 @@ class AudioManager {
       this.state.isMuted = session.isMuted ?? false;
       this.state.repeatMode = session.repeatMode ?? 'off';
       this.state.isShuffled = session.isShuffled ?? false;
-      this.state.autoplay = session.autoplay ?? true;
+      this.state.autoplay = session.autoplay ?? false;
       if (session.currentSong) {
         this.state.currentSong = session.currentSong;
         this.state.queue = session.queue ?? [session.currentSong];
@@ -125,12 +125,10 @@ class AudioManager {
         const restoreTime = this.state.currentTime;
 
         if (restoredSong.source === 'youtube' || videoId) {
-          const shouldAutoPlay = session.wasPlaying ?? true;
-          youtubeService.loadVideo(videoId, restoreTime, shouldAutoPlay);
-          if (shouldAutoPlay) {
-            this.state.isPlaying = true;
-            this.userWantsPlaying = true;
-          }
+          // Never auto-blast audio unprompted on startup or page refresh; cue cleanly
+          youtubeService.loadVideo(videoId, restoreTime, false);
+          this.state.isPlaying = false;
+          this.userWantsPlaying = false;
         }
       }
     }
@@ -144,19 +142,6 @@ class AudioManager {
       window.addEventListener('beforeunload', () => {
         saveSession(this.state);
       });
-
-      // Browser autoplay policy guard: if playback was blocked on cold reload, resume on first user interaction
-      const triggerAutoContinue = () => {
-        if (this.state.currentSong && !this.state.isPlaying && this.userWantsPlaying) {
-          this.play();
-        }
-        window.removeEventListener('pointerdown', triggerAutoContinue);
-        window.removeEventListener('keydown', triggerAutoContinue);
-        window.removeEventListener('touchstart', triggerAutoContinue);
-      };
-      window.addEventListener('pointerdown', triggerAutoContinue, { once: true });
-      window.addEventListener('keydown', triggerAutoContinue, { once: true });
-      window.addEventListener('touchstart', triggerAutoContinue, { once: true });
 
       // Network connectivity listeners to handle offline gracefully
       window.addEventListener('offline', () => {

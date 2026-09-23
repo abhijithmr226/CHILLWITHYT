@@ -155,14 +155,37 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
         {/* Primary and Secondary CTA hierarchy */}
         <div className="flex flex-wrap items-center gap-2.5 relative z-10">
-          {/* Primary Action */}
-          <button
-            onClick={handlePlayAllTrending}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#FF0000] hover:bg-[#CC0000] text-white text-xs font-bold transition shadow-lg shadow-red-900/40 cursor-pointer"
-          >
-            <Play className="w-4 h-4 fill-current" />
-            <span>Play Top Charts</span>
-          </button>
+          {/* Resume Session Button if paused track exists */}
+          {audioManager.getState().currentSong && !audioManager.getState().isPlaying ? (
+            <button
+              onClick={() => audioManager.play()}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#FF0000] hover:bg-[#CC0000] text-white text-xs font-bold transition shadow-lg shadow-red-900/40 cursor-pointer"
+              title="Resume playback from where you left off"
+            >
+              <Play className="w-4 h-4 fill-current" />
+              <span className="truncate max-w-[180px]">Resume: {audioManager.getState().currentSong?.title}</span>
+            </button>
+          ) : (
+            <button
+              onClick={handlePlayAllTrending}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#FF0000] hover:bg-[#CC0000] text-white text-xs font-bold transition shadow-lg shadow-red-900/40 cursor-pointer"
+            >
+              <Play className="w-4 h-4 fill-current" />
+              <span>Play Top Charts</span>
+            </button>
+          )}
+
+          {/* Resume from Liked Songs button */}
+          {(state.likedSongs.length > 0 || state.likedSongIds.length > 0) && (
+            <button
+              onClick={() => store.resumeFromLikedSongs()}
+              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.15] border border-white/10 text-white text-xs font-semibold transition cursor-pointer"
+              title="Resume playback from your liked collection"
+            >
+              <Heart className="w-3.5 h-3.5 text-red-500 fill-current" />
+              <span>Resume from Liked ({state.likedSongs.length || state.likedSongIds.length})</span>
+            </button>
+          )}
 
           {/* Secondary Actions */}
           <button
@@ -170,7 +193,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white text-xs font-semibold transition cursor-pointer"
           >
             <Wand2 className="w-4 h-4 text-red-400" />
-            <span>Generate Daily Mix</span>
+            <span>Daily Mix</span>
           </button>
 
           <button

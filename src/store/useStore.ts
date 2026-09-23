@@ -38,7 +38,7 @@ const STORAGE_KEYS = {
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  autoplay: true,
+  autoplay: false, // Default off to prevent unprompted audio blasting
   audioNormalization: true,
   highQualityAudio: true,
   crossfadeDuration: 3,
@@ -771,6 +771,17 @@ class Store {
 
   public clearSearchHistory() {
     this.setState({ searchHistory: [] });
+  }
+
+  public resumeFromLikedSongs(): boolean {
+    const songs = this.state.likedSongs && this.state.likedSongs.length > 0
+      ? this.state.likedSongs
+      : DEFAULT_TRACKS.filter((t) => this.state.likedSongIds.includes(t.id));
+    if (songs.length > 0) {
+      audioManager.playSong(songs[0], songs);
+      return true;
+    }
+    return false;
   }
 
   public applyQuickStyle(vibeTag: string, languageHint?: string) {

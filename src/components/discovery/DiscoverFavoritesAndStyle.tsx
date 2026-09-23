@@ -116,6 +116,17 @@ export const DiscoverFavoritesAndStyle: React.FC<DiscoverFavoritesAndStyleProps>
 
             {/* Quick Actions */}
             <div className="flex items-center gap-2 flex-wrap shrink-0">
+              {(state.likedSongs.length > 0 || state.likedSongIds.length > 0) && (
+                <button
+                  onClick={() => store.resumeFromLikedSongs()}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/[0.08] hover:bg-white/[0.15] border border-white/10 text-white text-xs font-semibold transition cursor-pointer"
+                  title="Resume playback from your liked songs collection"
+                >
+                  <Heart className="w-3.5 h-3.5 text-red-500 fill-current" />
+                  <span>Resume from Liked ({state.likedSongs.length || state.likedSongIds.length})</span>
+                </button>
+              )}
+
               <button
                 onClick={handleStartStyleRadio}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FF0000] hover:bg-[#CC0000] text-white text-xs font-bold transition shadow-lg shadow-red-900/40 cursor-pointer"
