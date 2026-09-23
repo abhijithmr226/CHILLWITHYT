@@ -121,3 +121,20 @@ input[type=range]::-webkit-slider-runnable-track {
   background: #272727;
   border-radius: 9999px;
 }
+
+/* ── UI Protection: Ensure Modal Controls & Nav are Never Trapped by 3rd-Party Scripts ── */
+#full-screen-player-top-bar,
+.app-top-control,
+.modal-close-btn,
+header,
+nav {
+  pointer-events: auto !important;
+}
+
+/* Constrain 3rd-party ad scripts from stealing clicks over main application bars */
+iframe[class*="container-1ec6d2f068bccb44c3232be6846d9883"],
+div[class*="container-1ec6d2f068bccb44c3232be6846d9883"],
+iframe[id*="container-1ec6d2f068bccb44c3232be6846d9883"] {
+  z-index: 50 !important;
+}
+

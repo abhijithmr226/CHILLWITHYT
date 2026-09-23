@@ -310,6 +310,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
           </button>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="border-t border-[#272727] py-8 text-center text-xs text-[#777777] bg-[#141416]">
+        <p>
+          ChillWithYT · Created & Developed by{' '}
+          <a
+            href="https://linkedin.com/in/abhijithmr226"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white hover:text-[#FF0000] font-semibold underline underline-offset-4 decoration-[#FF0000]/40 transition"
+          >
+            Abhijith M R
+          </a>
+        </p>
+      </footer>
     </div>
   );
 };

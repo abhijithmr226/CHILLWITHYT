@@ -57,6 +57,15 @@ export class YouTubePlayerService {
       if (prevReady) prevReady();
       this.initPlayer();
     };
+
+    const pollInterval = window.setInterval(() => {
+      if (window.YT && window.YT.Player && !this.player) {
+        window.clearInterval(pollInterval);
+        this.initPlayer();
+      }
+    }, 150);
+    // Auto-clear after 15s to prevent perpetual timer
+    window.setTimeout(() => window.clearInterval(pollInterval), 15000);
   }
 
   private initPlayer() {
@@ -251,7 +260,7 @@ export class YouTubePlayerService {
   private watchInterval: number | null = null;
 
   /** Position the player container over targetEl using fixed coordinates without moving it in the DOM tree */
-  public showInContainer(targetEl: HTMLElement, targetZIndex = '72') {
+  public showInContainer(targetEl: HTMLElement, targetZIndex = '82') {
     this.activeWatchTarget = targetEl;
     let container = document.getElementById(this.containerId);
     if (!container) {

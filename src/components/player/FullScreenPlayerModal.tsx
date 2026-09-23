@@ -133,30 +133,13 @@ export const FullScreenPlayerModal: React.FC = () => {
     return () => clearTimeout(timer);
   }, [overlaySearchQuery]);
 
-  // Auto video play: when modal opens on a streamable song, default to video mode
+  // Default to 'no_video' (Thumbnail + Studio Equalizer) for instant, reliable loading without black screens
   useEffect(() => {
-    const current = audioManager.getState().currentSong;
-    if (current?.source === 'youtube' || !!current?.sourceId || !!current?.id) {
-      setDisplayMode('video');
-    } else {
+    if (!state.isFullScreenPlayerOpen) return;
+    if (!displayMode) {
       setDisplayMode('no_video');
     }
   }, [state.isFullScreenPlayerOpen]);
-
-  // Auto-switch video mode when song changes mid-session
-  useEffect(() => {
-    const songId = playback.currentSong?.id ?? null;
-    if (songId && songId !== lastSongIdRef.current) {
-      lastSongIdRef.current = songId;
-      if (playback.currentSong?.source === 'youtube' || !!playback.currentSong?.sourceId || !!playback.currentSong?.id) {
-        if (displayMode === 'no_video') {
-          // Keep user's preference if they specifically set no_video
-        }
-      } else {
-        setDisplayMode('no_video');
-      }
-    }
-  }, [playback.currentSong?.id]);
 
   // Clean up on component unmount
   useEffect(() => {
@@ -175,13 +158,13 @@ export const FullScreenPlayerModal: React.FC = () => {
     const isVideoMode = (displayMode === 'video' || displayMode === 'split') && !!playback.currentSong;
 
     if (isVideoMode && videoMountNode) {
-      youtubeService.showInContainer(videoMountNode, '72');
+      youtubeService.showInContainer(videoMountNode, '82');
 
       const t1 = window.setTimeout(() => {
-        if (videoMountNode && !isSearchOverlayOpen) youtubeService.showInContainer(videoMountNode, '72');
+        if (videoMountNode && !isSearchOverlayOpen) youtubeService.showInContainer(videoMountNode, '82');
       }, 60);
       const t2 = window.setTimeout(() => {
-        if (videoMountNode && !isSearchOverlayOpen) youtubeService.showInContainer(videoMountNode, '72');
+        if (videoMountNode && !isSearchOverlayOpen) youtubeService.showInContainer(videoMountNode, '82');
       }, 200);
 
       return () => {
@@ -216,10 +199,10 @@ export const FullScreenPlayerModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-[70] bg-[#0C0C0E] flex flex-col justify-between px-3 py-2 sm:px-6 sm:py-4 md:px-8 md:py-5 animate-fade-in select-none">
+    <div className="fixed inset-0 z-[80] bg-[#0C0C0E] flex flex-col justify-between px-3 py-2 sm:px-6 sm:py-4 md:px-8 md:py-5 animate-fade-in select-none">
       {/* Locked Floating Unlock Pill */}
       {isLocked && (
-        <div className="fixed top-5 left-0 right-0 flex justify-center z-[85] pointer-events-auto animate-fade-in">
+        <div className="fixed top-5 left-0 right-0 flex justify-center z-[110] pointer-events-auto animate-fade-in">
           <button
             onClick={() => setIsLocked(false)}
             className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-black/90 backdrop-blur-xl border border-[#FF0000]/60 text-white shadow-[0_0_25px_rgba(255,0,0,0.4)] hover:scale-105 active:scale-95 transition-all text-xs font-bold tracking-wider uppercase cursor-pointer group"
@@ -233,7 +216,9 @@ export const FullScreenPlayerModal: React.FC = () => {
       )}
 
       {/* Top Bar - Clean, Compact 48px Header */}
-      <div className={`flex items-center justify-between gap-2 z-[75] transition-all duration-300 ${
+      <div 
+        id="full-screen-player-top-bar"
+        className={`flex items-center justify-between gap-2 z-[100] relative pointer-events-auto transition-all duration-300 ${
         isLocked ? 'opacity-0 pointer-events-none -translate-y-2' : 'opacity-100 translate-y-0'
       }`}>
         {/* Top-Left: Minimize Button & App Branding */}
@@ -410,8 +395,31 @@ export const FullScreenPlayerModal: React.FC = () => {
                 <div 
                   className="relative w-full aspect-video rounded-2xl overflow-hidden bg-black ring-1 ring-white/10 shadow-2xl"
                 >
+                  {/* Underlay Ambient Artwork & Stream Connector */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-[#101014] select-none">
+                    <img
+                      src={currentSong.artwork}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-cover opacity-30 blur-2xl scale-110 pointer-events-none"
+                      aria-hidden="true"
+                    />
+                    <img
+                      src={currentSong.artwork}
+                      alt={currentSong.title}
+                      className="relative z-0 max-h-[85%] aspect-video object-contain rounded-xl shadow-lg border border-white/10"
+                    />
+                    {playback.isBuffering && (
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-10">
+                        <div className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-black/85 border border-white/15 text-xs text-white shadow-xl">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FF0000]" />
+                          <span className="font-medium">Connecting YouTube stream...</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Dedicated mount target for YouTube video player */}
-                  <div ref={setVideoMountNode} className="w-full h-full" />
+                  <div ref={setVideoMountNode} className="relative z-10 w-full h-full" />
 
                   {isLocked && (
                     <div className="absolute top-3 right-3 bg-black/75 backdrop-blur-md px-3 py-1 rounded-full border border-[#FF0000]/40 text-xs text-white flex items-center gap-1.5 z-[74] pointer-events-none shadow-lg animate-fade-in">
@@ -436,7 +444,30 @@ export const FullScreenPlayerModal: React.FC = () => {
                   <div 
                     className="relative w-full h-full aspect-video rounded-2xl overflow-hidden bg-black ring-1 ring-white/10 shadow-2xl"
                   >
-                    <div ref={setVideoMountNode} className="w-full h-full" />
+                    {/* Underlay Ambient Artwork & Stream Connector */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-[#101014] select-none">
+                      <img
+                        src={currentSong.artwork}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover opacity-30 blur-2xl scale-110 pointer-events-none"
+                        aria-hidden="true"
+                      />
+                      <img
+                        src={currentSong.artwork}
+                        alt={currentSong.title}
+                        className="relative z-0 max-h-[85%] aspect-video object-contain rounded-xl shadow-lg border border-white/10"
+                      />
+                      {playback.isBuffering && (
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-10">
+                          <div className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-black/85 border border-white/15 text-xs text-white shadow-xl">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FF0000]" />
+                            <span className="font-medium">Connecting YouTube stream...</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div ref={setVideoMountNode} className="relative z-10 w-full h-full" />
 
                     {isLocked && (
                       <div className="absolute top-3 right-3 bg-black/75 backdrop-blur-md px-3 py-1 rounded-full border border-[#FF0000]/40 text-xs text-white flex items-center gap-1.5 z-[74] pointer-events-none shadow-lg animate-fade-in">
@@ -517,7 +548,7 @@ export const FullScreenPlayerModal: React.FC = () => {
           </div>
 
           {/* Bottom Controls Area */}
-          <div className={`w-full max-w-2xl mx-auto space-y-3 sm:space-y-4 z-[75] transition-all duration-300 ${
+          <div className={`w-full max-w-2xl mx-auto space-y-3 sm:space-y-4 z-[100] relative pointer-events-auto transition-all duration-300 ${
             isLocked ? 'opacity-0 pointer-events-none translate-y-4' : 'opacity-100 translate-y-0'
           }`}>
             {/* Progress Scrubber */}

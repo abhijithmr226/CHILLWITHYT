@@ -12,7 +12,8 @@ import {
   Disc,
   Headphones,
   Download,
-  Sparkles
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
 import { resolveAvatar } from '../../utils/avatar';
 
@@ -159,7 +160,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate, onOpe
       )}
 
       {/* Bottom Profile & Settings */}
-      <div className="pt-4 border-t border-[#272727] space-y-1">
+      <div className="pt-3 border-t border-[#272727] space-y-2">
         {state.currentUser && (
           <div
             onClick={() => onNavigate('/profile')}
@@ -188,6 +189,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate, onOpe
             </button>
           </div>
         )}
+
+        {/* Developer Credit */}
+        <div className="px-2 py-1 flex items-center justify-between text-[11px] text-[#717171]">
+          <span>Developer</span>
+          <a
+            href="https://linkedin.com/in/abhijithmr226"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#CCCCCC] hover:text-[#FF0000] font-semibold transition flex items-center gap-1 group"
+            title="Connect on LinkedIn"
+          >
+            <span className="group-hover:underline">Abhijith M R</span>
+            <ExternalLink className="w-3 h-3 text-[#717171] group-hover:text-[#FF0000]" />
+          </a>
+        </div>
       </div>
     </aside>
   );

@@ -16,7 +16,8 @@ import {
   Moon, 
   Coffee, 
   Zap,
-  Disc3
+  Disc3,
+  X
 } from 'lucide-react';
 
 interface LanguageOption {
@@ -188,23 +189,29 @@ export const MusicTasteOnboardingModal: React.FC = () => {
 
     setTimeout(() => {
       setSynthesisStage(2);
-    }, 800);
+    }, 700);
 
     setTimeout(() => {
       setSynthesisStage(3);
-    }, 1700);
+    }, 1400);
 
     setTimeout(() => {
-      const prefs: UserMusicPreferences = {
-        languages: selectedLanguages,
-        genres: selectedVibes,
-        artists: selectedArtists,
-        primaryLanguage: selectedLanguages[0] || 'Malayalam',
-        completedOnboarding: true,
-        completedAt: new Date().toISOString(),
-      };
-      store.saveMusicPreferences(prefs);
-    }, 2500);
+      try {
+        const prefs: UserMusicPreferences = {
+          languages: selectedLanguages,
+          genres: selectedVibes,
+          artists: selectedArtists,
+          primaryLanguage: selectedLanguages[0] || 'Malayalam',
+          completedOnboarding: true,
+          completedAt: new Date().toISOString(),
+        };
+        store.saveMusicPreferences(prefs);
+      } catch (err) {
+        console.warn('Error saving music preferences:', err);
+      } finally {
+        store.setState({ isTasteOnboardingOpen: false });
+      }
+    }, 2000);
   };
 
   return (
@@ -236,14 +243,14 @@ export const MusicTasteOnboardingModal: React.FC = () => {
             </div>
           </div>
 
-          {step < 4 && (
-            <button
-              onClick={() => store.closeTasteOnboarding()}
-              className="text-xs text-white/40 hover:text-white transition px-3 py-1.5 rounded-lg hover:bg-white/5"
-            >
-              Skip for now
-            </button>
-          )}
+          <button
+            onClick={() => store.setState({ isTasteOnboardingOpen: false })}
+            className="text-xs text-white/50 hover:text-white transition px-3 py-1.5 rounded-xl hover:bg-white/10 flex items-center gap-1.5 cursor-pointer border border-white/10"
+            title="Close"
+          >
+            <span>{step < 4 ? "Skip for now" : "Done"}</span>
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
 
         {/* Modal Body */}
@@ -450,6 +457,25 @@ export const MusicTasteOnboardingModal: React.FC = () => {
                 <span className={`w-2 h-2 rounded-full transition-all duration-300 ${synthesisStage >= 2 ? 'bg-red-500 scale-125' : 'bg-white/20'}`} />
                 <span className={`w-2 h-2 rounded-full transition-all duration-300 ${synthesisStage >= 3 ? 'bg-red-500 scale-125' : 'bg-white/20'}`} />
               </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    store.saveMusicPreferences({
+                      languages: selectedLanguages,
+                      genres: selectedVibes,
+                      artists: selectedArtists,
+                      primaryLanguage: selectedLanguages[0] || 'Malayalam',
+                      completedOnboarding: true,
+                    });
+                  } catch {}
+                  store.setState({ isTasteOnboardingOpen: false });
+                }}
+                className="mt-1 px-5 py-2 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white text-xs font-bold transition cursor-pointer shadow-lg shadow-red-600/20 active:scale-95"
+              >
+                Start Listening Now →
+              </button>
             </div>
           )}
 

@@ -1,7 +1,12 @@
 {
   "name": "chillwithyt",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "ChillWithYT — Real-time Synchronized YouTube Music & Social Rooms",
+  "author": {
+    "name": "Abhijith M R",
+    "url": "https://linkedin.com/in/abhijithmr226"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

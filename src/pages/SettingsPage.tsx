@@ -57,7 +57,7 @@ const AVATAR_PRESETS = [
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onOpenInstallModal }) => {
   const [state, store] = useStore();
-  const [activeTab, setActiveTab] = useState<'account' | 'audio' | 'appearance' | 'rooms' | 'privacy'>('account');
+  const [activeTab, setActiveTab] = useState<'account' | 'audio' | 'appearance' | 'rooms' | 'privacy' | 'about'>('account');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Form State: Account
@@ -305,6 +305,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onOpenIn
             { id: 'appearance', label: 'Theme & Visualizer', icon: Palette, badge: null },
             { id: 'rooms', label: 'Social & Rooms', icon: Users, badge: null },
             { id: 'privacy', label: 'Privacy & System', icon: Shield, badge: null },
+            { id: 'about', label: 'Developer & Credits', icon: Sparkles, badge: 'Creator' },
           ].map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
@@ -1348,6 +1349,82 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onOpenIn
                   <Check className="w-4 h-4" />
                   <span>Save Privacy Settings</span>
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── TAB 6: DEVELOPER & CREDITS ── */}
+          {activeTab === 'about' && (
+            <div className="space-y-6">
+              {/* Developer Profile Hero Card */}
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1E1E24] via-[#161619] to-[#0F0F12] border border-[#2E2E36] p-6 sm:p-8 shadow-2xl">
+                <div className="absolute top-0 right-0 w-72 h-72 bg-[#FF0000]/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+                
+                <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
+                  <div className="relative">
+                    <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-[#FF0000] to-rose-500 p-0.5 shadow-xl shadow-red-900/40">
+                      <div className="w-full h-full rounded-[22px] bg-[#161619] flex items-center justify-center overflow-hidden">
+                        <Sparkles className="w-10 h-10 text-[#FF0000] animate-pulse" />
+                      </div>
+                    </div>
+                    <span className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                      Creator
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
+                      <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                        Abhijith M R
+                      </h2>
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#FF0000]/20 text-[#FF4D4D] text-[11px] font-bold border border-[#FF0000]/30">
+                        Lead Developer & Architect
+                      </span>
+                    </div>
+
+                    <p className="text-xs sm:text-sm text-[#AAAAAA] leading-relaxed max-w-xl">
+                      Crafted the ChillWithYT experience — realtime synchronized YouTube music rooms, studio equalizer engines, low-latency audio sync, and cross-device listening party software.
+                    </p>
+
+                    <div className="pt-3 flex flex-wrap items-center justify-center sm:justify-start gap-3">
+                      <a
+                        href="https://linkedin.com/in/abhijithmr226"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#0A66C2] hover:bg-[#004182] text-white text-xs font-bold transition shadow-lg shadow-blue-900/30 cursor-pointer active:scale-95"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        <span>linkedin.com/in/abhijithmr226</span>
+                      </a>
+
+                      <a
+                        href="https://github.com/abhijithmr226/CHILLWITHYT"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#26262B] hover:bg-[#33333A] text-white text-xs font-semibold border border-white/10 transition cursor-pointer"
+                      >
+                        <span>GitHub Repository</span>
+                        <ExternalLink className="w-3.5 h-3.5 text-[#888888]" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Platform Telemetry & Version Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-[#1C1C20] border border-white/5 space-y-1">
+                  <span className="text-[11px] text-[#717171] uppercase tracking-wider font-semibold">Platform Version</span>
+                  <p className="text-sm font-bold text-white">ChillWithYT v1.0.0 (Production)</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-[#1C1C20] border border-white/5 space-y-1">
+                  <span className="text-[11px] text-[#717171] uppercase tracking-wider font-semibold">Engine Stack</span>
+                  <p className="text-sm font-bold text-white">React 19 · Vite · Web Audio API</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-[#1C1C20] border border-white/5 space-y-1">
+                  <span className="text-[11px] text-[#717171] uppercase tracking-wider font-semibold">Realtime Engine</span>
+                  <p className="text-sm font-bold text-white">Supabase Realtime + YouTube Iframe API</p>
+                </div>
               </div>
             </div>
           )}
