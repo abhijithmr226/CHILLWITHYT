@@ -181,7 +181,7 @@ export function App() {
   const isRoomView = currentPath.startsWith('/room/');
 
   return (
-    <div className="min-h-screen bg-[#0F0F0F] text-[#F1F1F1] flex flex-col font-sans antialiased selection:bg-[#FF0000]/30">
+    <div className="h-screen h-[100dvh] bg-[#0F0F0F] text-[#F1F1F1] flex flex-col font-sans antialiased selection:bg-[#FF0000]/30 overflow-hidden">
       {/* 1. Desktop Window Frame Header (Spotify/Electron Client Software Look) */}
       <DesktopAppHeader onOpenInstallModal={() => setIsInstallModalOpen(true)} />
 
@@ -218,7 +218,7 @@ export function App() {
         )}
 
         {/* Dynamic Page Content */}
-        <main className={`flex-1 overflow-y-auto ${!isRoomView ? 'pb-36 sm:pb-28' : 'pb-0'}`}>
+        <main className={`flex-1 ${!isRoomView ? 'overflow-y-auto pb-36 sm:pb-28' : 'overflow-hidden flex flex-col'}`}>
           {renderPage()}
         </main>
       </div>

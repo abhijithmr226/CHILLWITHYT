@@ -484,7 +484,7 @@ export const RoomPage: React.FC<RoomPageProps> = ({ roomId, onNavigate }) => {
   );
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-4rem)] md:h-[calc(100vh-4rem)] bg-[#0C0C0E] select-none overflow-hidden relative">
+    <div className="flex flex-col h-full bg-[#0C0C0E] select-none overflow-hidden relative">
       {/* Toast Feedback */}
       {toastMessage && (
         <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-[#1A1A1E] border border-amber-500/40 text-amber-300 text-xs font-semibold shadow-2xl animate-fade-in flex items-center gap-2">

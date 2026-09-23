@@ -164,7 +164,7 @@ export const DiscoverFavoritesAndStyle: React.FC<DiscoverFavoritesAndStyleProps>
               <span className="text-[11px] hidden sm:inline">Instant 1-tap style makeup</span>
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar overscroll-x-contain touch-pan-x">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar overscroll-x-contain">
               {QUICK_STYLE_VIBES.map((vibe) => {
                 const isSelected = appliedVibeId === vibe.id || state.musicPreferences?.genres?.includes(vibe.vibeTag);
                 return (
@@ -253,7 +253,7 @@ export const DiscoverFavoritesAndStyle: React.FC<DiscoverFavoritesAndStyleProps>
         </div>
 
         {/* Genre & Taste Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar overscroll-x-contain touch-pan-x">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar overscroll-x-contain">
           {FAVOURITE_CATEGORIES.map((cat) => {
             const isSelected = activeFavCategory === cat.id;
             return (
@@ -273,7 +273,7 @@ export const DiscoverFavoritesAndStyle: React.FC<DiscoverFavoritesAndStyleProps>
         </div>
 
         {/* Responsive Grid on Desktop; Smooth Carousel on Mobile */}
-        <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 pb-2 sm:pb-0 overscroll-x-contain touch-pan-x no-scrollbar">
+        <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 pb-2 sm:pb-0 overscroll-x-contain no-scrollbar">
           {curatedFavourites.map(({ song, curatorNote, badge }) => {
             const isLiked = state.likedSongIds.includes(song.id);
             const isJustQueued = addedQueueId === song.id;

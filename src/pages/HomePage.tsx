@@ -310,7 +310,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           </div>
 
           {/* Horizontal Carousel on Mobile; Responsive Grid on Desktop */}
-          <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 pb-2 sm:pb-0 overscroll-x-contain touch-pan-x no-scrollbar">
+          <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 pb-2 sm:pb-0 overscroll-x-contain no-scrollbar">
             {continueListeningTracks.map((song) => {
               const isJustQueued = addedQueueSongId === song.id;
               return (
@@ -385,7 +385,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </div>
 
         {/* Horizontal Carousel on Mobile; Responsive Grid on Desktop */}
-        <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-3 lg:grid-cols-6 gap-3.5 pb-2 sm:pb-0 overscroll-x-contain touch-pan-x no-scrollbar">
+        <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-3 lg:grid-cols-6 gap-3.5 pb-2 sm:pb-0 overscroll-x-contain no-scrollbar">
           {personalizedDailyMixes.map((mix) => {
             const isPlayingThis = playingMixId === mix.id;
             return (
@@ -492,7 +492,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           </div>
         ) : (
           /* Horizontal on Mobile; 6-Column Grid on Desktop */
-          <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-3 lg:grid-cols-6 gap-3 pb-2 sm:pb-0 overscroll-x-contain touch-pan-x no-scrollbar">
+          <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-3 lg:grid-cols-6 gap-3 pb-2 sm:pb-0 overscroll-x-contain no-scrollbar">
             {trendingTracks.slice(0, 12).map((song, idx) => {
               const isLiked = state.likedSongIds.includes(song.id);
               const rank = idx + 1;
@@ -583,7 +583,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </div>
 
         {/* Horizontal Carousel on Mobile; 6-Column Grid on Desktop */}
-        <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 pb-2 sm:pb-0 overscroll-x-contain touch-pan-x no-scrollbar">
+        <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 pb-2 sm:pb-0 overscroll-x-contain no-scrollbar">
           {LANGUAGE_RADIO_STATIONS.slice(0, 12).map((station) => (
             <div
               key={station.id}
@@ -632,7 +632,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </div>
 
         {/* Horizontal Carousel on Mobile; 6-Column Grid on Desktop */}
-        <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-3 lg:grid-cols-6 gap-3 pb-2 sm:pb-0 overscroll-x-contain touch-pan-x no-scrollbar">
+        <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-3 lg:grid-cols-6 gap-3 pb-2 sm:pb-0 overscroll-x-contain no-scrollbar">
           {spotlightArtists.map((artist) => (
             <div
               key={artist.name}
