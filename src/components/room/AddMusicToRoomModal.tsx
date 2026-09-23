@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../../store/useStore';
 import { YouTubeDataApiService } from '../../services/audio/YouTubeDataApi';
 import { YouTubePlayerService } from '../../services/audio/YouTubePlayer';
-import { DEFAULT_TRACKS } from '../../services/audio/DefaultMusicProvider';
+import { DEFAULT_TRACKS, getDiverseSampleTracks } from '../../services/audio/DefaultMusicProvider';
 import { Song, Room } from '../../types';
 import {
   Search,
@@ -72,7 +72,7 @@ export const AddMusicToRoomModal: React.FC<AddMusicToRoomModalProps> = ({
         sTags.some((tag) => nameLower.includes(tag))
       );
     });
-    return matched.length >= 3 ? matched : unique.slice(0, 8);
+    return matched.length >= 3 ? matched : getDiverseSampleTracks(8);
   }, [room, state.likedSongs]);
 
   // Liked songs from persistent store cache

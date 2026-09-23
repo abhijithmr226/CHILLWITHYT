@@ -9,7 +9,8 @@ import {
 } from '../services/audio/SmartPlaylistEngine';
 import { SmartPlaylistModal } from '../components/playlist/SmartPlaylistModal';
 import { StorageService } from '../services/storage/StorageService';
-import { ListMusic, Plus, Play, Users, FolderDown, Loader2, Check, ExternalLink, Sparkles, Wand2, Trash2, Upload, Image as ImageIcon } from 'lucide-react';
+import { DEFAULT_PLAYLISTS } from '../services/audio/DefaultMusicProvider';
+import { ListMusic, Plus, Play, Users, FolderDown, Loader2, Check, ExternalLink, Sparkles, Wand2, Trash2, Upload, Image as ImageIcon, Compass } from 'lucide-react';
 import { Playlist, Song } from '../types';
 import { ResponsiveAdBanner } from '../components/ads/AdSlot';
 
@@ -19,7 +20,7 @@ interface PlaylistsPageProps {
 
 export const PlaylistsPage: React.FC<PlaylistsPageProps> = ({ onNavigate }) => {
   const [state, store] = useStore();
-  const [activeTab, setActiveTab] = useState<'my' | 'dailymixes' | 'youtube'>('my');
+  const [activeTab, setActiveTab] = useState<'my' | 'dailymixes' | 'curated' | 'youtube'>('my');
   const [isCreating, setIsCreating] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isSmartModalOpen, setIsSmartModalOpen] = useState(false);
@@ -250,6 +251,18 @@ export const PlaylistsPage: React.FC<PlaylistsPageProps> = ({ onNavigate }) => {
         </button>
 
         <button
+          onClick={() => setActiveTab('curated')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition shrink-0 cursor-pointer ${
+            activeTab === 'curated'
+              ? 'bg-[#F1F1F1] text-[#0F0F0F] font-bold shadow-md'
+              : 'bg-[#272727] text-[#AAAAAA] hover:text-white hover:bg-[#383838]'
+          }`}
+        >
+          <Compass className="w-3.5 h-3.5" />
+          <span>Curated Collections ({DEFAULT_PLAYLISTS.length})</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('youtube')}
           className={`px-4 py-2 rounded-xl text-xs font-semibold transition shrink-0 cursor-pointer ${
             activeTab === 'youtube'
@@ -403,14 +416,99 @@ export const PlaylistsPage: React.FC<PlaylistsPageProps> = ({ onNavigate }) => {
 
       {/* Active Tab: My Library */}
       {activeTab === 'my' && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {state.playlists.map((pl: Playlist) => (
+        <>
+          {state.playlists.length === 0 ? (
+            <div className="text-center py-16 px-4 rounded-3xl bg-[#141416] border border-[#232328] space-y-4 max-w-md mx-auto my-6">
+              <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-[#FF4D4D]">
+                <ListMusic className="w-7 h-7" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-white">Your Library is Clean</h3>
+                <p className="text-xs text-[#888888] max-w-xs mx-auto">
+                  Create custom playlists or import existing ones from YouTube to make this space your own.
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-2.5 pt-2">
+                <button
+                  onClick={() => setIsCreating(true)}
+                  className="px-4 py-2.5 rounded-xl bg-[#FF0000] hover:bg-[#CC0000] text-white text-xs font-bold transition shadow-md cursor-pointer"
+                >
+                  Create Playlist
+                </button>
+                <button
+                  onClick={() => setIsImporting(true)}
+                  className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white text-xs font-semibold transition cursor-pointer"
+                >
+                  Import from YouTube
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {state.playlists.map((pl: Playlist) => (
+                <div
+                  key={pl.id}
+                  onClick={() => onNavigate(`/playlist/${pl.id}`)}
+                  className="group cursor-pointer rounded-2xl bg-[#212121] hover:bg-[#272727] border border-[#272727] hover:border-[#383838] p-3.5 transition duration-300 shadow-md flex flex-col justify-between"
+                >
+                  <div className="relative aspect-square rounded-xl overflow-hidden mb-3">
+                    <img
+                      src={pl.coverUrl}
+                      alt={pl.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    />
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                      <div className="w-10 h-10 rounded-full bg-[#FF0000] text-white flex items-center justify-center shadow-lg">
+                        <Play className="w-4 h-4 fill-current ml-0.5" />
+                      </div>
+                    </div>
+
+                    {pl.isCollaborative && (
+                      <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-gray-200 text-[9px] font-bold px-2 py-0.5 rounded-full border border-white/10 flex items-center gap-1">
+                        <Users className="w-2.5 h-2.5" />
+                        <span>Collaborative</span>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Delete playlist "${pl.name}"?`)) {
+                          store.deletePlaylist(pl.id);
+                          showNotification(`Deleted "${pl.name}"`);
+                        }
+                      }}
+                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 hover:bg-red-600 text-gray-300 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10 cursor-pointer shadow-md"
+                      title="Delete playlist"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-bold text-white truncate group-hover:text-[#FF4D4D] transition">
+                      {pl.name}
+                    </h3>
+                    <p className="text-[11px] text-[#AAAAAA] truncate mt-0.5">by {pl.ownerName}</p>
+                    <p className="text-[10px] text-[#717171] mt-1">{pl.songsCount} songs</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Active Tab: Curated Collections (Official Genres) */}
+      {activeTab === 'curated' && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 animate-fade-in">
+          {DEFAULT_PLAYLISTS.map((pl: Playlist) => (
             <div
               key={pl.id}
               onClick={() => onNavigate(`/playlist/${pl.id}`)}
-              className="group cursor-pointer rounded-2xl bg-[#212121] hover:bg-[#272727] border border-[#272727] hover:border-[#383838] p-3.5 transition duration-300 shadow-md flex flex-col justify-between"
+              className="group cursor-pointer rounded-2xl bg-[#18181A] hover:bg-[#222226] border border-[#27272A] hover:border-[#3E3E44] p-3.5 transition duration-300 shadow-md flex flex-col justify-between"
             >
-              <div className="relative aspect-square rounded-xl overflow-hidden mb-3">
+              <div className="relative aspect-square rounded-xl overflow-hidden mb-3 bg-neutral-900 border border-white/5">
                 <img
                   src={pl.coverUrl}
                   alt={pl.name}
@@ -422,33 +520,16 @@ export const PlaylistsPage: React.FC<PlaylistsPageProps> = ({ onNavigate }) => {
                   </div>
                 </div>
 
-                {pl.isCollaborative && (
-                  <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-gray-200 text-[9px] font-bold px-2 py-0.5 rounded-full border border-white/10 flex items-center gap-1">
-                    <Users className="w-2.5 h-2.5" />
-                    <span>Collaborative</span>
-                  </div>
-                )}
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (window.confirm(`Delete playlist "${pl.name}"?`)) {
-                      store.deletePlaylist(pl.id);
-                      showNotification(`Deleted "${pl.name}"`);
-                    }
-                  }}
-                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 hover:bg-red-600 text-gray-300 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10 cursor-pointer shadow-md"
-                  title="Delete playlist"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                <div className="absolute top-2 left-2 bg-black/75 backdrop-blur-sm text-red-400 text-[9px] font-bold px-2 py-0.5 rounded-full border border-white/10 flex items-center gap-1">
+                  <span>Curated Collection</span>
+                </div>
               </div>
 
               <div>
                 <h3 className="text-xs sm:text-sm font-bold text-white truncate group-hover:text-[#FF4D4D] transition">
                   {pl.name}
                 </h3>
-                <p className="text-[11px] text-[#AAAAAA] truncate mt-0.5">by {pl.ownerName}</p>
+                <p className="text-[11px] text-[#AAAAAA] line-clamp-1 mt-0.5">{pl.description}</p>
                 <p className="text-[10px] text-[#717171] mt-1">{pl.songsCount} songs</p>
               </div>
             </div>

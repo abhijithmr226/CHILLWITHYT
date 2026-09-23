@@ -7,7 +7,8 @@ import { ArtworkImage } from '../../utils/artwork';
 import {
   analyzeUserStyle,
   QUICK_STYLE_VIBES,
-  CURATED_OUR_FAVOURITES,
+  getCuratedFavourites,
+  FAVOURITE_CATEGORIES,
   QuickStyleVibe,
 } from '../../utils/styleProfiler';
 import {
@@ -41,6 +42,7 @@ export const DiscoverFavoritesAndStyle: React.FC<DiscoverFavoritesAndStyleProps>
   const [state, store] = useStore();
   const [addedQueueId, setAddedQueueId] = useState<string | null>(null);
   const [appliedVibeId, setAppliedVibeId] = useState<string | null>(null);
+  const [activeFavCategory, setActiveFavCategory] = useState<string>('foryou');
 
   // Compute dynamic user style profile
   const styleProfile = useMemo(() => {
@@ -51,6 +53,11 @@ export const DiscoverFavoritesAndStyle: React.FC<DiscoverFavoritesAndStyleProps>
       state.likedSongs
     );
   }, [state.searchHistory, state.musicPreferences, state.history, state.likedSongs]);
+
+  // Dynamically compute curated favorites based on active category & user taste
+  const curatedFavourites = useMemo(() => {
+    return getCuratedFavourites(activeFavCategory, state.musicPreferences);
+  }, [activeFavCategory, state.musicPreferences]);
 
   const handlePlaySong = (song: Song, playlist: Song[]) => {
     audioManager.playSong(song, playlist);
@@ -77,8 +84,8 @@ export const DiscoverFavoritesAndStyle: React.FC<DiscoverFavoritesAndStyleProps>
   const handleStartStyleRadio = () => {
     if (styleProfile.recommendedTracks.length > 0) {
       radioEngine.startRadio(styleProfile.recommendedTracks[0]);
-    } else if (CURATED_OUR_FAVOURITES.length > 0) {
-      radioEngine.startRadio(CURATED_OUR_FAVOURITES[0].song);
+    } else if (curatedFavourites.length > 0) {
+      radioEngine.startRadio(curatedFavourites[0].song);
     }
   };
 
@@ -245,16 +252,36 @@ export const DiscoverFavoritesAndStyle: React.FC<DiscoverFavoritesAndStyleProps>
           )}
         </div>
 
+        {/* Genre & Taste Filter Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar overscroll-x-contain touch-pan-x">
+          {FAVOURITE_CATEGORIES.map((cat) => {
+            const isSelected = activeFavCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setActiveFavCategory(cat.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 cursor-pointer ${
+                  isSelected
+                    ? 'bg-white text-black font-bold shadow-md'
+                    : 'bg-white/[0.06] hover:bg-white/[0.12] text-[#AAAAAA] hover:text-white border border-white/5'
+                }`}
+              >
+                {cat.label}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Responsive Grid on Desktop; Smooth Carousel on Mobile */}
         <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 pb-2 sm:pb-0 overscroll-x-contain touch-pan-x no-scrollbar">
-          {CURATED_OUR_FAVOURITES.map(({ song, curatorNote, badge }) => {
+          {curatedFavourites.map(({ song, curatorNote, badge }) => {
             const isLiked = state.likedSongIds.includes(song.id);
             const isJustQueued = addedQueueId === song.id;
-            const favouriteList = CURATED_OUR_FAVOURITES.map((f) => f.song);
+            const favouriteList = curatedFavourites.map((f) => f.song);
 
             return (
               <div
-                key={`fav-${song.id}`}
+                key={`fav-${song.id}-${activeFavCategory}`}
                 className="group cursor-pointer rounded-2xl bg-[#161619] hover:bg-[#202024] border border-[#26262B] hover:border-[#3D3D45] p-2.5 transition duration-200 flex flex-col justify-between shadow-sm relative overflow-hidden min-w-[155px] sm:min-w-0 shrink-0"
               >
                 {/* 16:9 Thumbnail Box */}

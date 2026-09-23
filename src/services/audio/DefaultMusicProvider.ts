@@ -957,8 +957,38 @@ export const DEFAULT_TRACKS: Song[] = [
 ];
 
 // Helper to filter tracks by language/tag
-const getTracksByTag = (tag: string) =>
+export const getTracksByTag = (tag: string): Song[] =>
   DEFAULT_TRACKS.filter((s) => s.tags?.some((t) => t.toLowerCase().includes(tag.toLowerCase())));
+
+export const getTracksByLanguage = (language: string): Song[] => {
+  const l = language.toLowerCase();
+  return DEFAULT_TRACKS.filter((s) => s.tags?.some((t) => t.toLowerCase() === l || t.toLowerCase().includes(l)));
+};
+
+/**
+ * Returns an evenly balanced, diverse sample of tracks across Global Pop, Hindi, South, Punjabi, and Lofi
+ * so that no single regional genre dominates or feels like a hardcoded template.
+ */
+export const getDiverseSampleTracks = (count = 12): Song[] => {
+  const pop = getTracksByTag('english').slice(0, 3);
+  const hindi = getTracksByTag('hindi').slice(0, 3);
+  const punjabi = getTracksByTag('punjabi').slice(0, 2);
+  const tamil = getTracksByTag('tamil').slice(0, 2);
+  const malayalam = getTracksByTag('malayalam').slice(0, 2);
+  const lofi = getTracksByTag('lofi').slice(0, 2);
+
+  const blended: Song[] = [];
+  const maxLen = Math.max(pop.length, hindi.length, punjabi.length, tamil.length, malayalam.length, lofi.length);
+  for (let i = 0; i < maxLen; i++) {
+    if (pop[i]) blended.push(pop[i]);
+    if (hindi[i]) blended.push(hindi[i]);
+    if (tamil[i]) blended.push(tamil[i]);
+    if (punjabi[i]) blended.push(punjabi[i]);
+    if (malayalam[i]) blended.push(malayalam[i]);
+    if (lofi[i]) blended.push(lofi[i]);
+  }
+  return blended.slice(0, count);
+};
 
 export const DEFAULT_PLAYLISTS: Playlist[] = [
   {

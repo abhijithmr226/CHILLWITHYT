@@ -26,8 +26,14 @@ interface LandingPageProps {
 export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   const [state, store] = useStore();
 
+  const featuredTrack = React.useMemo(() => {
+    if (state.likedSongs && state.likedSongs.length > 0) return state.likedSongs[0];
+    const pop = DEFAULT_TRACKS.find(t => t.tags?.includes('English')) || DEFAULT_TRACKS[0];
+    return pop;
+  }, [state.likedSongs]);
+
   const handleStartListening = () => {
-    audioManager.playSong(DEFAULT_TRACKS[0]);
+    audioManager.playSong(featuredTrack);
     onNavigate('/');
   };
 
@@ -125,8 +131,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
               <div className="flex items-center gap-3">
                 <div className="relative w-12 h-12 rounded-xl overflow-hidden shadow-md ring-2 ring-[#FF0000]/40">
                   <img
-                    src={DEFAULT_TRACKS[0].artwork}
-                    alt={DEFAULT_TRACKS[0].title}
+                    src={featuredTrack.artwork}
+                    alt={featuredTrack.title}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
@@ -134,8 +140,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-white">{DEFAULT_TRACKS[0].title}</h4>
-                  <p className="text-xs text-[#AAAAAA]">{DEFAULT_TRACKS[0].artist}</p>
+                  <h4 className="text-sm font-semibold text-white">{featuredTrack.title}</h4>
+                  <p className="text-xs text-[#AAAAAA]">{featuredTrack.artist}</p>
                 </div>
               </div>
 

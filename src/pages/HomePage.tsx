@@ -1,11 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { audioManager } from '../services/audio/AudioManager';
-import { DEFAULT_TRACKS } from '../services/audio/DefaultMusicProvider';
+import { 
+  DEFAULT_TRACKS, 
+  getTracksByTag, 
+  getTracksByLanguage, 
+  getDiverseSampleTracks 
+} from '../services/audio/DefaultMusicProvider';
 import {
   YOUTUBE_REGIONS,
 } from '../services/audio/YouTubeDataApi';
-import { Song } from '../types';
+import { Song, UserMusicPreferences } from '../types';
 import { 
   DAILY_MIX_CONFIGS, 
   DailyMixConfig, 
@@ -39,6 +44,29 @@ interface HomePageProps {
   onNavigate: (path: string) => void;
 }
 
+// Region- and taste-aware smart fallback so users never see the same static template songs
+const getFallbackTrending = (region: string, preferences?: UserMusicPreferences | null): Song[] => {
+  // If region is Western or Global, return English / Global Pop tracks
+  if (['US', 'GB', 'CA', 'AU', 'GLOBAL'].includes(region)) {
+    const pop = getTracksByTag('english');
+    if (pop.length > 0) return pop.slice(0, 12);
+  }
+
+  // If user selected languages in their taste profile, prioritize their languages
+  if (preferences && preferences.completedOnboarding && (preferences.languages || []).length > 0) {
+    const matched: Song[] = [];
+    for (const lang of preferences.languages) {
+      matched.push(...getTracksByLanguage(lang).slice(0, 3));
+    }
+    if (matched.length >= 6) {
+      return matched.slice(0, 12);
+    }
+  }
+
+  // Authentic, balanced multi-genre Indian & Global charts mix (Hindi, English, Punjabi, Tamil, Malayalam)
+  return getDiverseSampleTracks(12);
+};
+
 export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const [state, store] = useStore();
   const [selectedRegion, setSelectedRegion] = useState('IN');
@@ -68,7 +96,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       setLoadingTrending(true);
       const { tracks, lastUpdated } = await SmartPlaylistEngine.getTodayTopCharts(selectedRegion);
       if (!cancelled) {
-        setTrendingTracks(tracks.length > 0 ? tracks : DEFAULT_TRACKS.slice(0, 12));
+        setTrendingTracks(tracks.length > 0 ? tracks : getFallbackTrending(selectedRegion, state.musicPreferences));
         setChartLastUpdated(lastUpdated);
         setLoadingTrending(false);
       }
@@ -77,7 +105,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     return () => {
       cancelled = true;
     };
-  }, [selectedRegion]);
+  }, [selectedRegion, state.musicPreferences]);
 
   const handlePlaySong = (song: Song, trackList?: Song[]) => {
     audioManager.playSong(song, trackList || trendingTracks);
@@ -114,6 +142,8 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     if (tracks.length > 0) {
       setTrendingTracks(tracks);
       setChartLastUpdated(lastUpdated);
+    } else {
+      setTrendingTracks(getFallbackTrending(selectedRegion, state.musicPreferences));
     }
     setLoadingTrending(false);
   };
@@ -123,18 +153,66 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     ? state.history.map((h) => h.song).filter((s): s is Song => !!(s && s.id)).slice(0, 8)
     : [];
 
-
   const currentRegionMeta = YOUTUBE_REGIONS.find((r) => r.code === selectedRegion) || YOUTUBE_REGIONS[0];
 
-  // Curated spotlight artists
-  const spotlightArtists = [
-    { name: 'Arijit Singh', genre: 'Soul • Acoustic Bollywood', initial: 'AS' },
-    { name: 'Anirudh Ravichander', genre: 'Mass EDM • Film Score', initial: 'AR' },
-    { name: 'Sushin Shyam', genre: 'Indie Electronic • Malayalam', initial: 'SS' },
-    { name: 'The Weeknd', genre: 'Synthwave • R&B', initial: 'TW' },
-    { name: 'Sid Sriram', genre: 'Carnatic Pop • Contemporary', initial: 'SR' },
-    { name: 'Dua Lipa', genre: 'Dance Pop • Disco', initial: 'DL' },
-  ];
+  // Dynamically prioritize Daily Mixes based on user onboarding preferences
+  const personalizedDailyMixes = useMemo(() => {
+    if (!state.musicPreferences?.completedOnboarding) return DAILY_MIX_CONFIGS;
+    const langs = (state.musicPreferences.languages || []).map(l => l.toLowerCase());
+    const genres = (state.musicPreferences.genres || []).map(g => g.toLowerCase());
+
+    return [...DAILY_MIX_CONFIGS].sort((a, b) => {
+      let scoreA = 0;
+      let scoreB = 0;
+      if (langs.includes('english') || genres.includes('pop')) {
+        if (a.id === 'daily-mix-5') scoreA += 5;
+        if (b.id === 'daily-mix-5') scoreB += 5;
+      }
+      if (langs.includes('hindi') || genres.includes('bollywood') || genres.includes('romance')) {
+        if (a.id === 'daily-mix-2') scoreA += 5;
+        if (b.id === 'daily-mix-2') scoreB += 5;
+      }
+      if (langs.includes('punjabi')) {
+        if (a.id === 'daily-mix-3') scoreA += 5;
+        if (b.id === 'daily-mix-3') scoreB += 5;
+      }
+      if (langs.includes('telugu')) {
+        if (a.id === 'daily-mix-4') scoreA += 5;
+        if (b.id === 'daily-mix-4') scoreB += 5;
+      }
+      if (langs.includes('malayalam') || langs.includes('tamil')) {
+        if (a.id === 'daily-mix-1') scoreA += 5;
+        if (b.id === 'daily-mix-1') scoreB += 5;
+      }
+      if (genres.includes('chill') || genres.includes('lofi')) {
+        if (a.id === 'daily-mix-6') scoreA += 5;
+        if (b.id === 'daily-mix-6') scoreB += 5;
+      }
+      return scoreB - scoreA;
+    });
+  }, [state.musicPreferences]);
+
+  // Curated spotlight artists, dynamically enriched with user's selected artists
+  const spotlightArtists = useMemo(() => {
+    const base = [
+      { name: 'Arijit Singh', genre: 'Soul • Acoustic Bollywood', initial: 'AS' },
+      { name: 'The Weeknd', genre: 'Synthwave • Global R&B', initial: 'TW' },
+      { name: 'Anirudh Ravichander', genre: 'Mass EDM • Film Score', initial: 'AR' },
+      { name: 'Diljit Dosanjh', genre: 'Punjabi Pop • Urban Desi', initial: 'DD' },
+      { name: 'Sushin Shyam', genre: 'Indie Electronic • Malayalam', initial: 'SS' },
+      { name: 'Dua Lipa', genre: 'Dance Pop • Disco', initial: 'DL' },
+    ];
+    if (state.musicPreferences?.artists && state.musicPreferences.artists.length > 0) {
+      const userArtists = state.musicPreferences.artists.map(a => ({
+        name: a,
+        genre: 'Your Favorite Artist',
+        initial: a.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+      }));
+      const combined = [...userArtists, ...base];
+      return combined.filter((v, i, a) => a.findIndex(t => t.name.toLowerCase() === v.name.toLowerCase()) === i).slice(0, 6);
+    }
+    return base;
+  }, [state.musicPreferences]);
 
   return (
     <div className="space-y-8 sm:space-y-10 p-4 sm:p-8 select-none max-w-7xl mx-auto">
@@ -308,7 +386,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
         {/* Horizontal Carousel on Mobile; Responsive Grid on Desktop */}
         <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-3 lg:grid-cols-6 gap-3.5 pb-2 sm:pb-0 overscroll-x-contain touch-pan-x no-scrollbar">
-          {DAILY_MIX_CONFIGS.map((mix) => {
+          {personalizedDailyMixes.map((mix) => {
             const isPlayingThis = playingMixId === mix.id;
             return (
               <div

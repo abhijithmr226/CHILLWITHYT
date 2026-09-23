@@ -105,7 +105,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate }) => {
           <div className="flex items-center justify-center sm:justify-start gap-6 pt-3 text-xs">
             <div>
               <span className="font-extrabold text-white text-base mr-1">
-                {user.stats?.roomsCreated || 12}
+                {user.stats?.roomsCreated || 0}
               </span>
               <span className="text-[#AAAAAA]">Rooms</span>
             </div>
@@ -117,9 +117,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate }) => {
             </div>
             <div>
               <span className="font-extrabold text-white text-base mr-1">
-                {user.stats?.songsPlayed || 542}
+                {state.history.length}
               </span>
-              <span className="text-[#AAAAAA]">Songs</span>
+              <span className="text-[#AAAAAA]">Played</span>
             </div>
           </div>
         </div>
@@ -167,74 +167,101 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate }) => {
       {/* Tab Contents */}
       <div>
         {activeTab === 'playlists' && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {state.playlists.map((pl) => (
-              <div
-                key={pl.id}
-                onClick={() => onNavigate(`/playlist/${pl.id}`)}
-                className="group cursor-pointer rounded-2xl p-3 bg-[#212121] hover:bg-[#272727] border border-[#272727] hover:border-[#383838] transition"
-              >
-                <img src={pl.coverUrl} alt={pl.name} className="w-full aspect-video rounded-xl object-cover mb-2" />
-                <h4 className="text-xs font-bold text-white truncate">{pl.name}</h4>
-                <p className="text-[10px] text-[#AAAAAA] truncate mt-0.5">{pl.songsCount} tracks</p>
+          <>
+            {state.playlists.length === 0 ? (
+              <div className="p-8 text-center text-xs text-[#888888] rounded-2xl bg-white/[0.02] border border-white/5 space-y-2">
+                <ListMusic className="w-6 h-6 text-white/30 mx-auto" />
+                <p>No playlists created yet. Head over to Playlists to build your first mix.</p>
               </div>
-            ))}
-          </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {state.playlists.map((pl) => (
+                  <div
+                    key={pl.id}
+                    onClick={() => onNavigate(`/playlist/${pl.id}`)}
+                    className="group cursor-pointer rounded-2xl p-3 bg-[#212121] hover:bg-[#272727] border border-[#272727] hover:border-[#383838] transition"
+                  >
+                    <img src={pl.coverUrl} alt={pl.name} className="w-full aspect-video rounded-xl object-cover mb-2" />
+                    <h4 className="text-xs font-bold text-white truncate">{pl.name}</h4>
+                    <p className="text-[10px] text-[#AAAAAA] truncate mt-0.5">{pl.songsCount} tracks</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         {activeTab === 'liked' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {likedSongs.map((song) => (
-              <div
-                key={song.id}
-                onClick={() => audioManager.playSong(song)}
-                className="flex items-center justify-between p-3 rounded-xl bg-[#212121] hover:bg-[#272727] border border-[#272727] cursor-pointer transition group"
-              >
-                <div className="flex items-center gap-3 overflow-hidden">
-                  <img src={song.artwork} alt={song.title} className="w-11 h-11 rounded-lg object-cover shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-white truncate group-hover:text-[#FF4D4D] transition">
-                      {song.title}
-                    </p>
-                    <p className="text-[11px] text-[#AAAAAA] truncate">{song.artist}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    store.toggleLikeSong(song.id, song);
-                  }}
-                  className="p-2 text-[#FF0000] hover:scale-110 transition cursor-pointer"
-                  title="Remove from liked songs"
-                >
-                  <Heart className="w-4 h-4 fill-current" />
-                </button>
+          <>
+            {likedSongs.length === 0 ? (
+              <div className="p-8 text-center text-xs text-[#888888] rounded-2xl bg-white/[0.02] border border-white/5 space-y-2">
+                <Heart className="w-6 h-6 text-white/30 mx-auto" />
+                <p>No liked songs yet. Tap the heart on any song to save it here.</p>
               </div>
-            ))}
-          </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {likedSongs.map((song) => (
+                  <div
+                    key={song.id}
+                    onClick={() => audioManager.playSong(song)}
+                    className="flex items-center justify-between p-3 rounded-xl bg-[#212121] hover:bg-[#272727] border border-[#272727] cursor-pointer transition group"
+                  >
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <img src={song.artwork} alt={song.title} className="w-11 h-11 rounded-lg object-cover shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-white truncate group-hover:text-[#FF4D4D] transition">
+                          {song.title}
+                        </p>
+                        <p className="text-[11px] text-[#AAAAAA] truncate">{song.artist}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        store.toggleLikeSong(song.id, song);
+                      }}
+                      className="p-2 text-[#FF0000] hover:scale-110 transition cursor-pointer"
+                      title="Remove from liked songs"
+                    >
+                      <Heart className="w-4 h-4 fill-current" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         {activeTab === 'history' && (
-          <div className="space-y-2">
-            {state.history.map((item, idx) => (
-              <div
-                key={idx}
-                onClick={() => audioManager.playSong(item.song)}
-                className="flex items-center justify-between p-3 rounded-xl bg-[#212121] hover:bg-[#272727] border border-[#272727] cursor-pointer transition group"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <img src={item.song.artwork} alt={item.song.title} className="w-10 h-10 rounded-lg object-cover shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-white truncate group-hover:text-[#FF4D4D] transition">
-                      {item.song.title}
-                    </p>
-                    <p className="text-[11px] text-[#AAAAAA] truncate">{item.song.artist}</p>
-                  </div>
-                </div>
-                <span className="text-[11px] font-mono text-[#717171] shrink-0">{item.playedAt}</span>
+          <>
+            {state.history.length === 0 ? (
+              <div className="p-8 text-center text-xs text-[#888888] rounded-2xl bg-white/[0.02] border border-white/5 space-y-2">
+                <History className="w-6 h-6 text-white/30 mx-auto" />
+                <p>No listening history yet. Start streaming songs to track your plays.</p>
               </div>
-            ))}
-          </div>
+            ) : (
+              <div className="space-y-2">
+                {state.history.map((item, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => audioManager.playSong(item.song)}
+                    className="flex items-center justify-between p-3 rounded-xl bg-[#212121] hover:bg-[#272727] border border-[#272727] cursor-pointer transition group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img src={item.song.artwork} alt={item.song.title} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-white truncate group-hover:text-[#FF4D4D] transition">
+                          {item.song.title}
+                        </p>
+                        <p className="text-[11px] text-[#AAAAAA] truncate">{item.song.artist}</p>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-mono text-[#717171] shrink-0">{item.playedAt}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

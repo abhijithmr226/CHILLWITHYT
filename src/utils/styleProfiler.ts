@@ -1,5 +1,10 @@
 import { Song, UserMusicPreferences } from '../types';
-import { DEFAULT_TRACKS } from '../services/audio/DefaultMusicProvider';
+import {
+  DEFAULT_TRACKS,
+  getTracksByTag,
+  getTracksByLanguage,
+  getDiverseSampleTracks
+} from '../services/audio/DefaultMusicProvider';
 
 export interface StylePersona {
   personaName: string;
@@ -97,43 +102,125 @@ export const QUICK_STYLE_VIBES: QuickStyleVibe[] = [
   },
 ];
 
-// Curated Hand-Picked "Our Favourites" Tracks with 100% playable official YouTube audio
-export const CURATED_OUR_FAVOURITES: {
+export interface CuratedFavouriteItem {
   song: Song;
   curatorNote: string;
   badge: string;
-}[] = [
-  {
-    song: DEFAULT_TRACKS[0], // Jaada - Sushin Shyam
-    curatorNote: 'Hypnotic electronic brass & infectious Malayalam energy',
-    badge: "Editor's Choice",
-  },
-  {
-    song: DEFAULT_TRACKS[1] || DEFAULT_TRACKS[0], // Illuminati - Sushin Shyam
-    curatorNote: 'Bass-heavy South anthem that took the charts by storm',
-    badge: 'Chart Topper',
-  },
-  {
-    song: DEFAULT_TRACKS.find(t => t.tags?.includes('Tamil')) || DEFAULT_TRACKS[3] || DEFAULT_TRACKS[0],
-    curatorNote: 'Pure Anirudh rockstar energy with stadium-level percussion',
-    badge: 'High Voltage',
-  },
-  {
-    song: DEFAULT_TRACKS.find(t => t.tags?.includes('Hindi')) || DEFAULT_TRACKS[4] || DEFAULT_TRACKS[0],
-    curatorNote: 'Timeless acoustic soul that hits straight in the heart',
-    badge: 'Soulful Melody',
-  },
-  {
-    song: DEFAULT_TRACKS.find(t => t.tags?.includes('Chill') || t.tags?.includes('Acoustic')) || DEFAULT_TRACKS[3] || DEFAULT_TRACKS[0],
-    curatorNote: 'Smooth sunset melodies for unwinding after a long day',
-    badge: 'Late Night Chill',
-  },
-  {
-    song: DEFAULT_TRACKS.find(t => t.tags?.includes('Retro')) || DEFAULT_TRACKS[13] || DEFAULT_TRACKS[2] || DEFAULT_TRACKS[0],
-    curatorNote: 'Warm golden brass & vintage nostalgic instrumentation',
-    badge: 'Evergreen Vibe',
-  },
-].filter((item): item is { song: Song; curatorNote: string; badge: string } => !!(item && item.song && item.song.id));
+}
+
+export const FAVOURITE_CATEGORIES = [
+  { id: 'foryou', label: '✨ Curated For You' },
+  { id: 'global', label: '🌐 Global Pop' },
+  { id: 'bollywood', label: '🇮🇳 Bollywood Soul' },
+  { id: 'south', label: '🌴 South Waves' },
+  { id: 'punjabi', label: '💥 Punjabi & Trap' },
+  { id: 'lofi', label: '☕ Lo-Fi Chill' },
+];
+
+/**
+ * Dynamically produces hand-picked gems based on category and user taste.
+ * Avoids rigid templates by adapting directly to preferences.
+ */
+export function getCuratedFavourites(
+  category = 'foryou',
+  preferences?: UserMusicPreferences | null
+): CuratedFavouriteItem[] {
+  if (category === 'global') {
+    const pop = getTracksByTag('english').slice(0, 6);
+    return pop.map((song, i) => ({
+      song,
+      curatorNote: i === 0 ? 'Chart-dominating synthwave pop with timeless energy' : 'Global Billboard hit streaming worldwide',
+      badge: i === 0 ? 'Global Anthem' : 'Billboard Top 10',
+    }));
+  }
+
+  if (category === 'bollywood') {
+    const hindi = getTracksByTag('hindi').slice(0, 6);
+    return hindi.map((song, i) => ({
+      song,
+      curatorNote: i === 0 ? 'Heartfelt acoustic soul straight from Bollywood classics' : 'Soulful melody with acoustic instrumentation',
+      badge: i === 0 ? 'Soulful Hit' : 'Acoustic Melody',
+    }));
+  }
+
+  if (category === 'south') {
+    const south = [...getTracksByTag('malayalam'), ...getTracksByTag('tamil'), ...getTracksByTag('telugu')].slice(0, 6);
+    return south.map((song, i) => ({
+      song,
+      curatorNote: i === 0 ? 'Infectious rhythm & cinematic bass drops' : 'South Indian mass anthem with stadium percussion',
+      badge: i === 0 ? "Editor's Pick" : 'Cinema Chartbuster',
+    }));
+  }
+
+  if (category === 'punjabi') {
+    const punjabi = getTracksByTag('punjabi').slice(0, 6);
+    return punjabi.map((song, i) => ({
+      song,
+      curatorNote: 'Heavy 808s, street flow & global Punjabi trap anthem',
+      badge: i === 0 ? 'Desi Hit' : 'Club Banger',
+    }));
+  }
+
+  if (category === 'lofi') {
+    const lofi = getTracksByTag('lofi').slice(0, 6);
+    return lofi.map((song, i) => ({
+      song,
+      curatorNote: 'Calming ambient keys, warm tape saturation & flow-state beats',
+      badge: 'Zero Distraction',
+    }));
+  }
+
+  // category === 'foryou'
+  // Check if user has explicit preferences set
+  if (preferences && preferences.completedOnboarding) {
+    const userLangs = (preferences.languages || []).map(l => l.toLowerCase());
+    const userGenres = (preferences.genres || []).map(g => g.toLowerCase());
+    const matched: Song[] = [];
+
+    // Prioritize language preferences
+    for (const lang of userLangs) {
+      const found = getTracksByLanguage(lang);
+      matched.push(...found.slice(0, 2));
+    }
+
+    // Prioritize genre preferences
+    for (const g of userGenres) {
+      const found = getTracksByTag(g);
+      matched.push(...found.slice(0, 2));
+    }
+
+    // Deduplicate
+    const unique = matched.filter((s, idx, arr) => arr.findIndex(x => x.id === s.id) === idx);
+    if (unique.length >= 4) {
+      return unique.slice(0, 6).map((song, i) => ({
+        song,
+        curatorNote: 'Tailored precisely to your selected languages and listening taste',
+        badge: i === 0 ? 'Top Taste Match' : 'For You',
+      }));
+    }
+  }
+
+  // Diverse multi-genre eclectic lineup for new users: English, Hindi, Punjabi, South, Lofi
+  const balanced = getDiverseSampleTracks(6);
+  const badges = ['Global Hit', 'Soulful Romance', 'High Voltage', 'Desi Trap', 'South Wave', 'Deep Focus'];
+  const notes = [
+    'Chart-topping pop synthwave with universal acclaim',
+    'Timeless acoustic Bollywood soul that resonates deeply',
+    'Electrifying bass percussion and stadium energy',
+    'Modern Punjabi 808 rhythm with swagger and groove',
+    'Experimental cinematic fusion and infectious beats',
+    'Ambient soothing vinyl crackle for effortless focus',
+  ];
+
+  return balanced.map((song, i) => ({
+    song,
+    curatorNote: notes[i] || 'Hand-picked musical gem from our curated sound vault',
+    badge: badges[i] || "Editor's Choice",
+  }));
+}
+
+// Fallback constant for legacy imports
+export const CURATED_OUR_FAVOURITES: CuratedFavouriteItem[] = getCuratedFavourites('foryou');
 
 /**
  * Analyzes search history, user preferences, liked tracks, and play history
@@ -175,6 +262,7 @@ export function analyzeUserStyle(
 
   // If user is brand new with zero history or searches
   if (!hasSearches && !hasPrefs && !hasHistory && !hasLikes) {
+    const starterTracks = getCuratedFavourites('foryou').map(f => f.song);
     return {
       personaName: 'Curious Melodic Explorer',
       personaTagline: 'Discover our top favourites and pick your vibe to make up your signature sound.',
@@ -182,36 +270,124 @@ export function analyzeUserStyle(
       vibeBadge: '✨ Starter Taste',
       tags: ['#DiscoverFavourites', '#PickYourVibe', '#PureAudio', '#NoAlgorithms'],
       suggestedQueries: [
-        'Malayalam hits Sushin Shyam',
-        'Tamil Anirudh hits',
-        'Arijit Singh soulful acoustic',
-        'Lofi hip hop chill beats',
+        'The Weeknd Starboy official audio',
+        'Arijit Singh Kesariya Brahmastra',
+        'Anirudh Naa Ready Leo',
+        'Lofi hip hop chill beats study',
       ],
-      recommendedTracks: CURATED_OUR_FAVOURITES.map(f => f.song).filter(Boolean),
+      recommendedTracks: starterTracks,
       isDefault: true,
     };
   }
 
-  // Count domain keywords
+  // 1. Direct explicit preference priority (if user completed onboarding taste tuner)
+  if (hasPrefs && preferences) {
+    const langs = (preferences.languages || []).map(l => l.toLowerCase());
+    const genres = (preferences.genres || []).map(g => g.toLowerCase());
+
+    if (langs.includes('english') || genres.includes('pop') || genres.includes('hip-hop')) {
+      const engTracks = getTracksByTag('english');
+      if (engTracks.length > 0) {
+        return {
+          personaName: 'Global Pop & Modern Synthwave',
+          personaTagline: 'Hook-driven melodies, retro 80s synths, and chart-topping international anthems.',
+          primaryMood: 'Global Pop',
+          vibeBadge: '🌐 Modern Pop',
+          tags: ['#BillboardHot100', '#Synthwave', '#GlobalHits', '#RadioTop40'],
+          suggestedQueries: [
+            'The Weeknd top hit songs',
+            'Dua Lipa disco dance pop',
+            'Taylor Swift pop anthems',
+            'Billie Eilish indie pop',
+          ],
+          recommendedTracks: engTracks.slice(0, 6),
+          isDefault: false,
+        };
+      }
+    }
+
+    if (langs.includes('hindi') || genres.includes('bollywood') || genres.includes('romance')) {
+      const hinTracks = getTracksByTag('hindi');
+      if (hinTracks.length > 0) {
+        return {
+          personaName: 'Soulful Melody Romantic',
+          personaTagline: 'Drawn to heartfelt vocals, acoustic fingerpicking & timeless poetry.',
+          primaryMood: 'Soulful Romance',
+          vibeBadge: '❤️ Acoustic Soul',
+          tags: ['#AcousticSoul', '#HeartfeltMelodies', '#BollywoodLove', '#LateNightSerenade'],
+          suggestedQueries: [
+            'Arijit Singh romantic hits acoustic',
+            'Jasleen Royal Prateek Kuhad indie',
+            'Soulful Bollywood unplugged',
+            'Pritam greatest hits',
+          ],
+          recommendedTracks: hinTracks.slice(0, 6),
+          isDefault: false,
+        };
+      }
+    }
+
+    if (langs.includes('punjabi')) {
+      const punTracks = getTracksByTag('punjabi');
+      if (punTracks.length > 0) {
+        return {
+          personaName: 'Desi Street Pioneer',
+          personaTagline: 'Vibing with crisp 808s, Punjabi swagger & international chart hits.',
+          primaryMood: 'Punjabi & Trap',
+          vibeBadge: '💥 Desi Street',
+          tags: ['#BrownMunde', '#PunjabiHype', '#GlobalTrap', '#ModernDesi'],
+          suggestedQueries: [
+            'Diljit Dosanjh hit songs official audio',
+            'Karan Aujla latest trap tracks',
+            'AP Dhillon Punjabi wave',
+            'Desi hip hop street anthems',
+          ],
+          recommendedTracks: punTracks.slice(0, 6),
+          isDefault: false,
+        };
+      }
+    }
+  }
+
+  // 2. Count domain keywords across listening history and searches
   const counts = {
     lofi: (fullText.match(/lofi|chill|sleep|relax|study|ambient|rain|focus|coffee/g) || []).length,
     mass: (fullText.match(/mass|bass|workout|gym|hype|edm|trap|party|club/g) || []).length,
-    romance: (fullText.match(/romance|romantic|love|soul|acoustic|heart|melody|arijit/g) || []).length,
+    romance: (fullText.match(/romance|romantic|love|soul|acoustic|heart|melody|arijit|hindi|bollywood/g) || []).length,
     retro: (fullText.match(/retro|vintage|classic|evergreen|90s|80s|70s|golden/g) || []).length,
     south: (fullText.match(/malayalam|tamil|kerala|sushin|anirudh|jakes|rahman|arr|tollywood|telugu/g) || []).length,
-    punjabi: (fullText.match(/punjabi|diljit|aujla|ap dhillon|shubh|trap/g) || []).length,
-    pop: (fullText.match(/pop|weeknd|billie|dua|disco|synthwave|english|global/g) || []).length,
+    punjabi: (fullText.match(/punjabi|diljit|aujla|ap dhillon|shubh/g) || []).length,
+    pop: (fullText.match(/pop|weeknd|billie|dua|disco|synthwave|english|global|taylor|swift/g) || []).length,
   };
 
   // Find dominant mood
-  let dominant = 'south';
-  let maxCount = -1;
+  let dominant: keyof typeof counts | null = null;
+  let maxCount = 0;
   (Object.keys(counts) as (keyof typeof counts)[]).forEach(k => {
     if (counts[k] > maxCount) {
       maxCount = counts[k];
       dominant = k;
     }
   });
+
+  if (dominant === 'pop' && counts.pop > 0) {
+    const popTracks = getTracksByTag('english');
+    return {
+      personaName: 'Global Pop & Modern Synthwave',
+      personaTagline: 'Hook-driven melodies, retro 80s synths, and chart-topping international anthems.',
+      primaryMood: 'Global Pop',
+      vibeBadge: '🌐 Modern Pop',
+      tags: ['#BillboardHot100', '#Synthwave', '#GlobalHits', '#RadioTop40'],
+      suggestedQueries: [
+        'The Weeknd top hit songs',
+        'Dua Lipa disco dance pop',
+        'Taylor Swift pop anthems',
+        'Billie Eilish indie pop',
+      ],
+      recommendedTracks: popTracks.slice(0, 6),
+      isDefault: false,
+    };
+  }
 
   if (dominant === 'lofi' && counts.lofi > 0) {
     return {
@@ -226,7 +402,7 @@ export function analyzeUserStyle(
         'Peaceful piano ambient coding',
         'Rainy day lofi melodies',
       ],
-      recommendedTracks: DEFAULT_TRACKS.filter(t => t.tags?.some(tag => ['Acoustic', 'Chill', 'Melody'].includes(tag))).slice(0, 6),
+      recommendedTracks: DEFAULT_TRACKS.filter(t => t.tags?.some(tag => ['Acoustic', 'Chill', 'Melody', 'Lofi'].includes(tag))).slice(0, 6),
       isDefault: false,
     };
   }
@@ -250,6 +426,7 @@ export function analyzeUserStyle(
   }
 
   if (dominant === 'romance' && counts.romance > 0) {
+    const hindiTracks = getTracksByTag('hindi');
     return {
       personaName: 'Soulful Melody Romantic',
       personaTagline: 'Drawn to heartfelt vocals, acoustic fingerpicking & timeless poetry.',
@@ -262,12 +439,13 @@ export function analyzeUserStyle(
         'Soulful Bollywood unplugged',
         'Sid Sriram melodious hits',
       ],
-      recommendedTracks: DEFAULT_TRACKS.filter(t => t.tags?.some(tag => ['Soul', 'Romance', 'Arijit'].includes(tag))).slice(0, 6),
+      recommendedTracks: (hindiTracks.length > 0 ? hindiTracks : DEFAULT_TRACKS.filter(t => t.tags?.some(tag => ['Soul', 'Romance', 'Arijit'].includes(tag)))).slice(0, 6),
       isDefault: false,
     };
   }
 
   if (dominant === 'punjabi' && counts.punjabi > 0) {
+    const punjabiTracks = getTracksByTag('punjabi');
     return {
       personaName: 'Desi Street Pioneer',
       personaTagline: 'Vibing with crisp 808s, Punjabi swagger & international chart hits.',
@@ -280,7 +458,7 @@ export function analyzeUserStyle(
         'AP Dhillon Punjabi wave',
         'Desi hip hop street anthems',
       ],
-      recommendedTracks: DEFAULT_TRACKS.filter(t => t.tags?.some(tag => ['Dance', 'Energy'].includes(tag))).slice(0, 6),
+      recommendedTracks: (punjabiTracks.length > 0 ? punjabiTracks : DEFAULT_TRACKS.filter(t => t.tags?.some(tag => ['Dance', 'Energy'].includes(tag)))).slice(0, 6),
       isDefault: false,
     };
   }
@@ -303,20 +481,40 @@ export function analyzeUserStyle(
     };
   }
 
-  // Default South & Cinematic Indie
+  if (dominant === 'south' && counts.south > 0) {
+    const southTracks = [...getTracksByTag('malayalam'), ...getTracksByTag('tamil')];
+    return {
+      personaName: 'South Cinema & Indie Connoisseur',
+      personaTagline: 'Curating world-class composers, experimental fusion & cinematic masterstrokes.',
+      primaryMood: 'South Indie & Groove',
+      vibeBadge: '🌴 South Waves',
+      tags: ['#SushinShyam', '#AnirudhVibes', '#MalayalamIndie', '#KollywoodHits'],
+      suggestedQueries: [
+        'Aavesham Sushin Shyam songs',
+        'Anirudh Ravichander best tracks',
+        'Malayalam indie acoustic songs',
+        'Thallumaala Vishnu Vijay hits',
+      ],
+      recommendedTracks: southTracks.slice(0, 6),
+      isDefault: false,
+    };
+  }
+
+  // 3. Balanced multi-genre eclectic lineup if no single genre is dominant
+  const balancedGems = getDiverseSampleTracks(6);
   return {
-    personaName: 'South Cinema & Indie Connoisseur',
-    personaTagline: 'Curating world-class composers, experimental fusion & cinematic masterstrokes.',
-    primaryMood: 'South Indie & Groove',
-    vibeBadge: '🌴 South Waves',
-    tags: ['#SushinShyam', '#AnirudhVibes', '#MalayalamIndie', '#KollywoodHits'],
+    personaName: 'Curious Melodic Explorer',
+    personaTagline: 'An eclectic cross-section of global hits, soulful acoustics, and timeless grooves.',
+    primaryMood: 'Eclectic & Fresh',
+    vibeBadge: '✨ Eclectic Vibe',
+    tags: ['#GlobalHits', '#SoulAcoustic', '#PureVibes', '#NoBorders'],
     suggestedQueries: [
-      'Aavesham Sushin Shyam songs',
-      'Anirudh Ravichander best tracks',
-      'Malayalam indie acoustic songs',
-      'Thallumaala Vishnu Vijay hits',
+      'The Weeknd Starboy official audio',
+      'Arijit Singh Kesariya Brahmastra',
+      'Anirudh Naa Ready Leo',
+      'Lofi hip hop beats study focus',
     ],
-    recommendedTracks: DEFAULT_TRACKS.slice(0, 6),
-    isDefault: false,
+    recommendedTracks: balancedGems,
+    isDefault: true,
   };
 }

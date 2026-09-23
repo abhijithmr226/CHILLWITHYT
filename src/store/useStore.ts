@@ -128,7 +128,7 @@ class Store {
     roomChat: [],
     roomReactions: [],
     roomQueue: [],
-    playlists: DEFAULT_PLAYLISTS,
+    playlists: [],
     likedSongIds: [],
     likedSongs: [],
     lastLikedRecommendation: null,
@@ -222,10 +222,15 @@ class Store {
 
       const savedPlaylists = localStorage.getItem(STORAGE_KEYS.PLAYLISTS);
       if (savedPlaylists) {
-        const parsed = JSON.parse(savedPlaylists);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          this.state.playlists = parsed;
-        }
+        try {
+          const parsed = JSON.parse(savedPlaylists);
+          if (Array.isArray(parsed)) {
+            const mockPlaylistIds = ['pl-malayalam', 'pl-tamil', 'pl-telugu', 'pl-hindi', 'pl-punjabi', 'pl-indie', 'pl-english', 'pl-lofi'];
+            this.state.playlists = parsed.filter(p => p && p.id && !mockPlaylistIds.includes(p.id));
+          }
+        } catch {}
+      } else {
+        this.state.playlists = [];
       }
 
       // Purge all rooms and reset state to empty
