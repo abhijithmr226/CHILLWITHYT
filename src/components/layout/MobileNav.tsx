@@ -16,7 +16,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ currentPath, onNavigate })
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[60] bg-[#161618]/95 backdrop-blur-xl border-t border-[#27272A] flex items-center justify-around h-[64px] px-2 select-none pb-[env(safe-area-inset-bottom,4px)] shadow-[0_-10px_25px_rgba(0,0,0,0.5)]">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[60] bg-[#161618]/95 backdrop-blur-xl border-t border-[#27272A] flex items-center justify-around h-[calc(60px+env(safe-area-inset-bottom,0px))] px-2 select-none pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-10px_25px_rgba(0,0,0,0.5)] touch-manipulation">
       {tabs.map((tab) => {
         const active = currentPath === tab.path || (tab.path !== '/' && currentPath.startsWith(tab.path));
         const Icon = tab.icon;

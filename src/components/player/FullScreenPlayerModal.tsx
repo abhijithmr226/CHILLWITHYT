@@ -199,7 +199,7 @@ export const FullScreenPlayerModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-[80] bg-[#0C0C0E] flex flex-col justify-between px-3 py-2 sm:px-6 sm:py-4 md:px-8 md:py-5 animate-fade-in select-none">
+    <div className="fixed inset-0 z-[80] bg-[#0C0C0E] flex flex-col justify-between px-3 py-2 sm:px-6 sm:py-4 md:px-8 md:py-5 pb-[calc(10px+env(safe-area-inset-bottom,0px))] pt-[calc(8px+env(safe-area-inset-top,0px))] animate-fade-in select-none overflow-x-hidden">
       {/* Locked Floating Unlock Pill */}
       {isLocked && (
         <div className="fixed top-5 left-0 right-0 flex justify-center z-[110] pointer-events-auto animate-fade-in">

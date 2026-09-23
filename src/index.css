@@ -20,12 +20,24 @@
     --text-muted: #717171;
   }
 
-  body {
+  html, body {
     font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background-color: var(--bg-base);
     color: var(--text-primary);
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: none;
+  }
+
+  button, a, input, select, [role="button"] {
+    touch-action: manipulation;
+  }
+
+  /* Smooth inertia scrolling on all scrollable panes */
+  .overflow-y-auto, .overflow-x-auto, main {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
   }
 }
 

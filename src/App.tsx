@@ -212,7 +212,7 @@ export function App() {
         )}
 
         {/* Dynamic Page Content */}
-        <main className={`flex-1 overflow-y-auto ${!isRoomView ? 'pb-24 sm:pb-28' : 'pb-0'}`}>
+        <main className={`flex-1 overflow-y-auto ${!isRoomView ? 'pb-36 sm:pb-28' : 'pb-0'}`}>
           {renderPage()}
         </main>
       </div>
