@@ -35,7 +35,7 @@ import { ArtistPage } from './pages/ArtistPage';
 import { AlbumPage } from './pages/AlbumPage';
 
 export function App() {
-  const [currentPath, setCurrentPath] = useState<string>(window.location.pathname || '/');
+  const [currentPath, setCurrentPath] = useState<string>(window.location.pathname + window.location.search || '/');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewMode, setViewMode] = useState<'app' | 'landing'>('app');
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);

@@ -9,6 +9,7 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
+    historyApiFallback: true,
     proxy: {
       '/api/yt-innertube': {
         target: 'https://www.youtube.com',

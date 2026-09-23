@@ -1,5 +1,5 @@
 // ChillWithYT Progressive Web App (PWA) Service Worker
-const CACHE_NAME = 'chillwithyt-shell-v1';
+const CACHE_NAME = 'chillwithyt-shell-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -49,10 +49,23 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first strategy with cache fallback for app navigation
+  // Network-first strategy with cache fallback for app navigation (SPA deep-link reload fix)
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match('/index.html') || caches.match('/'))
+      (async () => {
+        // Try cache first for index.html
+        const cachedIndex = await caches.match('/index.html') || await caches.match('/');
+        try {
+          const networkResponse = await fetch(event.request);
+          // If we got a valid HTML response, return it
+          if (networkResponse.ok) return networkResponse;
+          // Non-OK (e.g. 404 from server on deep route) → serve the SPA shell
+          return cachedIndex || networkResponse;
+        } catch {
+          // Offline → serve cached SPA shell
+          return cachedIndex || new Response('Offline — please reconnect', { status: 503 });
+        }
+      })()
     );
     return;
   }
