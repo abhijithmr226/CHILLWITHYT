@@ -57,6 +57,10 @@ import {
 export const FullScreenPlayerModal: React.FC = () => {
   const [state, store] = useStore();
   const [playback, setPlayback] = useState<PlaybackState>(audioManager.getState());
+  const [progress, setProgress] = useState(() => ({
+    currentTime: audioManager.getState().currentTime,
+    duration: audioManager.getState().duration,
+  }));
   const [copied, setCopied] = useState(false);
   const [isBeatKick, setIsBeatKick] = useState(false);
   const [displayMode, setDisplayMode] = useState<'video' | 'no_video' | 'split'>('video');
@@ -84,11 +88,14 @@ export const FullScreenPlayerModal: React.FC = () => {
     store.setState({ isFullScreenPlayerOpen: false });
   };
 
-  // Subscribe to audio state changes
+  // Subscribe to audio state changes & progress
   useEffect(() => {
-    return audioManager.subscribe((newPlayback) => {
-      setPlayback(newPlayback);
-    });
+    const unsubPlayback = audioManager.subscribe(setPlayback);
+    const unsubProgress = audioManager.subscribeProgress(setProgress);
+    return () => {
+      unsubPlayback();
+      unsubProgress();
+    };
   }, []);
 
   // Global ESC key listener to close modal or search overlay
@@ -556,14 +563,14 @@ export const FullScreenPlayerModal: React.FC = () => {
               <input
                 type="range"
                 min="0"
-                max={duration || 100}
-                value={currentTime || 0}
+                max={progress.duration || duration || 100}
+                value={progress.currentTime || 0}
                 onChange={handleProgressChange}
                 className="w-full h-1.5 bg-white/15 rounded-lg appearance-none cursor-pointer accent-[#FF0000] hover:h-2 transition-all"
               />
               <div className="flex justify-between text-[11px] font-mono text-[#777777] px-0.5">
-                <span>{formatTime(currentTime)}</span>
-                <span>{formatTime(duration)}</span>
+                <span>{formatTime(progress.currentTime)}</span>
+                <span>{formatTime(progress.duration || duration)}</span>
               </div>
             </div>
 

@@ -54,6 +54,54 @@ interface RoomPageProps {
 
 type RoomTab = 'chat' | 'queue' | 'members';
 
+interface RoomScrubberProps {
+  duration: number;
+  isHostOrDJ: boolean;
+  ownerName: string;
+  onSeek: (target: number) => void;
+  formatTime: (sec: number) => string;
+}
+
+const RoomScrubber: React.FC<RoomScrubberProps> = React.memo(({
+  duration,
+  isHostOrDJ,
+  ownerName,
+  onSeek,
+  formatTime,
+}) => {
+  const [progress, setProgress] = useState(() => ({
+    currentTime: audioManager.getState().currentTime,
+    duration: audioManager.getState().duration || duration,
+  }));
+
+  useEffect(() => {
+    return audioManager.subscribeProgress(setProgress);
+  }, []);
+
+  const totalDur = progress.duration || duration || 100;
+
+  return (
+    <div className="space-y-1">
+      <input
+        type="range"
+        min="0"
+        max={totalDur}
+        value={progress.currentTime || 0}
+        onChange={(e) => onSeek(parseFloat(e.target.value))}
+        disabled={!isHostOrDJ}
+        className={`w-full h-1.5 bg-white/15 rounded-lg appearance-none cursor-pointer accent-[#FF0000] hover:h-2 transition-all ${
+          !isHostOrDJ ? 'opacity-60 cursor-not-allowed' : ''
+        }`}
+        title={isHostOrDJ ? 'Seek playback' : `Synced with ${ownerName}`}
+      />
+      <div className="flex justify-between items-center text-[11px] font-mono text-[#777777] px-0.5">
+        <span>{formatTime(progress.currentTime)}</span>
+        <span>{formatTime(totalDur)}</span>
+      </div>
+    </div>
+  );
+});
+
 export const RoomPage: React.FC<RoomPageProps> = ({ roomId, onNavigate }) => {
   const [state, store] = useStore();
   const [playback, setPlayback] = useState<PlaybackState>(audioManager.getState());
@@ -245,9 +293,8 @@ export const RoomPage: React.FC<RoomPageProps> = ({ roomId, onNavigate }) => {
 
   const isHostOrDJ = syncEngineRef.current?.isHost() ?? (room.ownerId === (state.currentUser?.id || 'guest'));
 
-  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSeek = (target: number) => {
     if (!isHostOrDJ) return;
-    const target = parseFloat(e.target.value);
     audioManager.seek(target);
     if (syncEngineRef.current && currentSong) {
       syncEngineRef.current.broadcastPlayback(playback.isPlaying, currentSong.id, target, playback.queueIndex, currentSong);
@@ -267,7 +314,7 @@ export const RoomPage: React.FC<RoomPageProps> = ({ roomId, onNavigate }) => {
     }
     audioManager.togglePlayPause();
     const isNowPlaying = !playback.isPlaying;
-    const pos = playback.currentTime;
+    const pos = audioManager.getState().currentTime;
     if (syncEngineRef.current && currentSong) {
       syncEngineRef.current.broadcastPlayback(isNowPlaying, currentSong.id, pos, playback.queueIndex, currentSong);
     }
@@ -737,24 +784,13 @@ export const RoomPage: React.FC<RoomPageProps> = ({ roomId, onNavigate }) => {
           {/* ── Playback Controls & Community Duel Area ── */}
           <div className="w-full max-w-xl mx-auto space-y-3 shrink-0 z-20 pt-1">
             {/* Progress Scrubber */}
-            <div className="space-y-1">
-              <input
-                type="range"
-                min="0"
-                max={playback.duration || 100}
-                value={playback.currentTime}
-                onChange={handleProgressChange}
-                disabled={!isHostOrDJ}
-                className={`w-full h-1.5 bg-white/15 rounded-lg appearance-none cursor-pointer accent-[#FF0000] hover:h-2 transition-all ${
-                  !isHostOrDJ ? 'opacity-60 cursor-not-allowed' : ''
-                }`}
-                title={isHostOrDJ ? 'Seek playback' : `Synced with ${room.ownerName}`}
-              />
-              <div className="flex justify-between items-center text-[11px] font-mono text-[#777777] px-0.5">
-                <span>{formatTime(playback.currentTime)}</span>
-                <span>{formatTime(playback.duration)}</span>
-              </div>
-            </div>
+            <RoomScrubber
+              duration={playback.duration}
+              isHostOrDJ={isHostOrDJ}
+              ownerName={room.ownerName}
+              onSeek={handleSeek}
+              formatTime={formatTime}
+            />
 
             {/* Transport Buttons Row */}
             <div className="flex items-center justify-between gap-2 pt-0.5">

@@ -102,7 +102,14 @@ export const AlbumPage: React.FC<AlbumPageProps> = ({ albumTitle, onNavigate }) 
   const [playback, setPlayback] = useState(audioManager.getState());
 
   useEffect(() => {
-    return audioManager.subscribe(setPlayback);
+    return audioManager.subscribe((newPlayback) => {
+      setPlayback((prev) => {
+        if (prev.currentSong?.id === newPlayback.currentSong?.id && prev.isPlaying === newPlayback.isPlaying) {
+          return prev;
+        }
+        return newPlayback;
+      });
+    });
   }, []);
 
   const cleanTitle = decodeURIComponent(albumTitle).trim();

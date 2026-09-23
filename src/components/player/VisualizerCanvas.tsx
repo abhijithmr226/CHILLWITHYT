@@ -43,8 +43,10 @@ export const VisualizerCanvas: React.FC<VisualizerCanvasProps> = ({
     renderer.start();
 
     // Listen to track transitions
+    let lastSongId: string | null = song?.id || null;
     const unsubscribeAudio = audioManager.subscribe((playback) => {
-      if (rendererRef.current && playback.currentSong) {
+      if (rendererRef.current && playback.currentSong && playback.currentSong.id !== lastSongId) {
+        lastSongId = playback.currentSong.id;
         rendererRef.current.updateSong(playback.currentSong);
       }
     });

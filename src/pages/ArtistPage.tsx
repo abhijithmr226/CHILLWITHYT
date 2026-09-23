@@ -40,7 +40,14 @@ export const ArtistPage: React.FC<ArtistPageProps> = ({ artistName, onNavigate }
   const [playback, setPlayback] = useState(audioManager.getState());
 
   useEffect(() => {
-    return audioManager.subscribe(setPlayback);
+    return audioManager.subscribe((newPlayback) => {
+      setPlayback((prev) => {
+        if (prev.currentSong?.id === newPlayback.currentSong?.id && prev.isPlaying === newPlayback.isPlaying) {
+          return prev;
+        }
+        return newPlayback;
+      });
+    });
   }, []);
 
   const cleanName = decodeURIComponent(artistName).trim();

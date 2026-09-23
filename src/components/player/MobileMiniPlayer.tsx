@@ -8,18 +8,26 @@ import { ArtworkImage } from '../../utils/artwork';
 export const MobileMiniPlayer: React.FC = () => {
   const [, store] = useStore();
   const [playback, setPlayback] = useState<PlaybackState>(audioManager.getState());
+  const [progress, setProgress] = useState(() => ({
+    currentTime: audioManager.getState().currentTime,
+    duration: audioManager.getState().duration,
+  }));
 
   useEffect(() => {
-    return audioManager.subscribe((newPlayback) => {
-      setPlayback(newPlayback);
-    });
+    const unsubPlayback = audioManager.subscribe(setPlayback);
+    const unsubProgress = audioManager.subscribeProgress(setProgress);
+    return () => {
+      unsubPlayback();
+      unsubProgress();
+    };
   }, []);
 
-  const { currentSong, isPlaying, currentTime, duration } = playback;
+  const { currentSong, isPlaying } = playback;
 
   if (!currentSong) return null;
 
-  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const totalDur = progress.duration || playback.duration;
+  const progressPercent = totalDur > 0 ? (progress.currentTime / totalDur) * 100 : 0;
 
   return (
     <div className="md:hidden fixed bottom-[calc(68px+env(safe-area-inset-bottom,0px))] left-2.5 right-2.5 z-[60] bg-[#1A1A1E]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.7)] overflow-hidden animate-slide-up select-none touch-manipulation">

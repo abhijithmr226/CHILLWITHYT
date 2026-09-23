@@ -67,7 +67,8 @@ function saveSession(state: PlaybackState) {
   }
 }
 
-type PlaybackListener = (state: PlaybackState) => void;
+export type PlaybackListener = (state: PlaybackState) => void;
+export type PlaybackProgressListener = (progress: { currentTime: number; duration: number }) => void;
 
 class AudioManager {
   private static instance: AudioManager;
@@ -94,6 +95,7 @@ class AudioManager {
   };
 
   private listeners: Set<PlaybackListener> = new Set();
+  private progressListeners: Set<PlaybackProgressListener> = new Set();
   private originalQueue: Song[] = [];
   private persistTimer: ReturnType<typeof setTimeout> | null = null;
   private lastPersistedTime = 0;
@@ -173,7 +175,7 @@ class AudioManager {
     this.audio.addEventListener('timeupdate', () => {
       if (this.state.currentSong?.source !== 'youtube') {
         this.state.currentTime = this.audio.currentTime;
-        this.notifyListeners();
+        this.notifyProgress();
       }
     });
 
@@ -223,7 +225,7 @@ class AudioManager {
         if (isYt) {
           this.state.currentTime = cur;
           if (dur > 0) this.state.duration = dur;
-          this.notifyListeners();
+          this.notifyProgress();
         }
       },
       onStateChange: (ytState) => {
@@ -348,6 +350,19 @@ class AudioManager {
     return () => {
       this.listeners.delete(listener);
     };
+  }
+
+  public subscribeProgress(listener: PlaybackProgressListener): () => void {
+    this.progressListeners.add(listener);
+    listener({ currentTime: this.state.currentTime, duration: this.state.duration });
+    return () => {
+      this.progressListeners.delete(listener);
+    };
+  }
+
+  private notifyProgress() {
+    const payload = { currentTime: this.state.currentTime, duration: this.state.duration };
+    this.progressListeners.forEach(fn => fn(payload));
   }
 
   private notifyListeners() {
@@ -568,6 +583,7 @@ class AudioManager {
       this.audio.currentTime = target;
     }
 
+    this.notifyProgress();
     this.notifyListeners();
   }
 

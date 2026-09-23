@@ -25,6 +25,10 @@ import { ArtworkImage } from '../../utils/artwork';
 export const GlobalBottomPlayer: React.FC = () => {
   const [state, store] = useStore();
   const [playback, setPlayback] = useState<PlaybackState>(audioManager.getState());
+  const [progress, setProgress] = useState(() => ({
+    currentTime: audioManager.getState().currentTime,
+    duration: audioManager.getState().duration,
+  }));
   const [radio, setRadio] = useState<RadioState>(radioEngine.getState());
   const [showResumeBanner, setShowResumeBanner] = useState(
     audioManager.hasRestoredSession()
@@ -36,9 +40,11 @@ export const GlobalBottomPlayer: React.FC = () => {
       // Hide banner once actual playback starts
       if (s.isPlaying) setShowResumeBanner(false);
     });
+    const unsubProgress = audioManager.subscribeProgress(setProgress);
     const unsubRadio = radioEngine.subscribe(setRadio);
     return () => {
       unsubAudio();
+      unsubProgress();
       unsubRadio();
     };
   }, []);
@@ -176,18 +182,18 @@ export const GlobalBottomPlayer: React.FC = () => {
           {/* Time Scrubber */}
           <div className="w-full flex items-center gap-2">
             <span className="text-[10px] font-mono text-[#717171] w-8 text-right">
-              {formatTime(currentTime)}
+              {formatTime(progress.currentTime)}
             </span>
             <input
               type="range"
               min="0"
-              max={duration || 100}
-              value={currentTime || 0}
+              max={progress.duration || duration || 100}
+              value={progress.currentTime || 0}
               onChange={handleProgressChange}
               className="flex-1"
             />
             <span className="text-[10px] font-mono text-[#717171] w-8 text-left">
-              {formatTime(duration)}
+              {formatTime(progress.duration || duration)}
             </span>
           </div>
         </div>

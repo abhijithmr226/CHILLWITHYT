@@ -247,18 +247,22 @@ export function App() {
         forceOpen={isInstallModalOpen}
         onClose={() => setIsInstallModalOpen(false)}
       />
-      <FullScreenPlayerModal />
-      <VisualizerOptionsModal />
-      <CreateRoomModal onRoomCreated={(newRoomId) => navigate(`/room/${newRoomId}`)} />
-      <QueueDrawer />
+      {state.isFullScreenPlayerOpen && <FullScreenPlayerModal />}
+      {state.isVisualizerOptionsOpen && <VisualizerOptionsModal />}
+      {state.isCreateRoomModalOpen && (
+        <CreateRoomModal onRoomCreated={(newRoomId) => navigate(`/room/${newRoomId}`)} />
+      )}
+      {state.isQueueDrawerOpen && <QueueDrawer />}
       <KeyboardShortcutsModal />
-      <AuthModal />
-      <MusicTasteOnboardingModal />
-      <AIPlaylistCreatorModal
-        isOpen={state.isAIPlaylistModalOpen}
-        onClose={() => store.setState({ isAIPlaylistModalOpen: false })}
-        onNavigate={navigate}
-      />
+      {state.isAuthModalOpen && <AuthModal />}
+      {state.isTasteOnboardingOpen && <MusicTasteOnboardingModal />}
+      {state.isAIPlaylistModalOpen && (
+        <AIPlaylistCreatorModal
+          isOpen={state.isAIPlaylistModalOpen}
+          onClose={() => store.setState({ isAIPlaylistModalOpen: false })}
+          onNavigate={navigate}
+        />
+      )}
     </div>
   );
 }

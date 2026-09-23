@@ -83,7 +83,12 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
 
   useEffect(() => {
     return audioManager.subscribe((newPlayback) => {
-      setPlayback(newPlayback);
+      setPlayback((prev) => {
+        if (prev.currentSong?.id === newPlayback.currentSong?.id && prev.isPlaying === newPlayback.isPlaying) {
+          return prev;
+        }
+        return newPlayback;
+      });
     });
   }, []);
 
