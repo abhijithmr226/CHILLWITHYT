@@ -11,6 +11,7 @@ import { Song } from '../types';
 import { MusicService } from '../services/audio/MusicService';
 import { ArtworkImage } from '../utils/artwork';
 import { ResponsiveAdBanner, AdSlot } from '../components/ads/AdSlot';
+import { DiscoverFavoritesAndStyle } from '../components/discovery/DiscoverFavoritesAndStyle';
 import {
   Play,
   Plus,
@@ -135,6 +136,7 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
       }
 
       if (query.trim()) {
+        store.recordSearch(query.trim());
         // Live search YouTube songs & playlists in parallel using cached MusicService
         const [searchedSongsResult, searchedPlaylists] = await Promise.all([
           MusicService.searchTracks(query, 28),
@@ -548,6 +550,14 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
       {/* ── Results Content ── */}
       {!loading && (
         <div className="space-y-8">
+          {/* ═══ 0. DISCOVER OUR FAVOURITES & MAKE UP YOUR STYLE ═══ */}
+          {!query && activeTab === 'All' && (
+            <DiscoverFavoritesAndStyle
+              onSearchSelect={(q) => setQuery(q)}
+              onNavigate={onNavigate}
+            />
+          )}
+
           {/* ═══ 1. TOP RESULT & TOP SONGS HERO SECTION (Search Mode in 'All') ═══ */}
           {query && topResult && activeTab === 'All' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">

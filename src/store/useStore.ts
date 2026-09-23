@@ -34,6 +34,7 @@ const STORAGE_KEYS = {
   PREFERENCES: 'chillwithyt_preferences',
   HISTORY: 'chillwithyt_history',
   LIKED_RECOMMENDATION: 'chillwithyt_liked_recommendation',
+  SEARCH_HISTORY: 'chillwithyt_search_history',
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -89,6 +90,7 @@ interface AppState {
     updatedAt: number;
   } | null;
   history: { song: Song; playedAt: string }[];
+  searchHistory: string[];
   visualizerConfig: VisualizerConfig;
   theme: 'dark' | 'light';
   accentColor: string;
@@ -140,6 +142,7 @@ class Store {
       { song: DEFAULT_TRACKS[6], playedAt: 'Yesterday' },
       { song: DEFAULT_TRACKS[7], playedAt: 'Yesterday' },
     ],
+    searchHistory: [],
     visualizerConfig: initialVisualizerConfig,
     theme: 'dark',
     accentColor: '#FF0000',
@@ -242,6 +245,16 @@ class Store {
         } catch {}
       }
 
+      const savedSearches = localStorage.getItem(STORAGE_KEYS.SEARCH_HISTORY) || localStorage.getItem('chillwithyt_recent_searches_v1');
+      if (savedSearches) {
+        try {
+          const parsed = JSON.parse(savedSearches);
+          if (Array.isArray(parsed)) {
+            this.state.searchHistory = parsed;
+          }
+        } catch {}
+      }
+
       const savedPrefs = localStorage.getItem(STORAGE_KEYS.PREFERENCES);
       if (savedPrefs) {
         try {
@@ -326,6 +339,10 @@ class Store {
       }
       if (updates.history) {
         localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(updates.history));
+      }
+      if (updates.searchHistory) {
+        localStorage.setItem(STORAGE_KEYS.SEARCH_HISTORY, JSON.stringify(updates.searchHistory));
+        localStorage.setItem('chillwithyt_recent_searches_v1', JSON.stringify(updates.searchHistory));
       }
     } catch {
       // LocalStorage full or quota restricted
@@ -735,6 +752,47 @@ class Store {
 
   public clearHistory() {
     this.setState({ history: [] });
+  }
+
+  public recordSearch(query: string) {
+    const trimmed = query.trim();
+    if (!trimmed || trimmed.length < 2) return;
+    const filtered = this.state.searchHistory.filter(
+      (item) => item.toLowerCase() !== trimmed.toLowerCase()
+    );
+    const updated = [trimmed, ...filtered].slice(0, 15);
+    this.setState({ searchHistory: updated });
+  }
+
+  public removeSearchItem(item: string) {
+    const updated = this.state.searchHistory.filter((q) => q !== item);
+    this.setState({ searchHistory: updated });
+  }
+
+  public clearSearchHistory() {
+    this.setState({ searchHistory: [] });
+  }
+
+  public applyQuickStyle(vibeTag: string, languageHint?: string) {
+    const currentPrefs = this.state.musicPreferences;
+    const existingGenres = currentPrefs?.genres || [];
+    const updatedGenres = [vibeTag, ...existingGenres.filter((g) => g !== vibeTag)].slice(0, 4);
+
+    const existingLangs = currentPrefs?.languages || ['Malayalam', 'Tamil'];
+    const updatedLangs = languageHint
+      ? [languageHint, ...existingLangs.filter((l) => l !== languageHint)].slice(0, 4)
+      : existingLangs;
+
+    const newPrefs: UserMusicPreferences = {
+      languages: updatedLangs,
+      genres: updatedGenres,
+      artists: currentPrefs?.artists || ['Sushin Shyam', 'Anirudh Ravichander', 'Arijit Singh'],
+      primaryLanguage: updatedLangs[0] || 'Malayalam',
+      completedOnboarding: true,
+      completedAt: new Date().toISOString(),
+    };
+
+    this.saveMusicPreferences(newPrefs);
   }
 
   public resetPlaylistsToDefault() {

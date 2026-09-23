@@ -119,10 +119,15 @@ export function App() {
 
     if (basePath === '/discover') {
       const isSearchFocus = currentPath.includes('focus=search');
+      const urlParams = currentPath.includes('?')
+        ? new URLSearchParams(currentPath.split('?')[1])
+        : null;
+      const urlQuery = urlParams?.get('q') || urlParams?.get('initialQuery') || searchQuery;
+
       return (
         <DiscoverPage
           onNavigate={navigate}
-          initialQuery={searchQuery}
+          initialQuery={urlQuery}
           autoFocusSearch={isSearchFocus}
         />
       );

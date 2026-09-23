@@ -41,6 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, onSearc
   const saveToRecent = (q: string) => {
     const trimmed = q.trim();
     if (!trimmed) return;
+    store.recordSearch(trimmed);
     try {
       const updated = [trimmed, ...recentSearches.filter((item) => item.toLowerCase() !== trimmed.toLowerCase())].slice(0, 8);
       setRecentSearches(updated);
@@ -52,6 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, onSearc
 
   const removeRecentSearch = (e: React.MouseEvent, item: string) => {
     e.stopPropagation();
+    store.removeSearchItem(item);
     try {
       const updated = recentSearches.filter((s) => s !== item);
       setRecentSearches(updated);
@@ -63,6 +65,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, onSearc
 
   const clearAllRecent = (e: React.MouseEvent) => {
     e.stopPropagation();
+    store.clearSearchHistory();
     setRecentSearches([]);
     try {
       localStorage.removeItem(RECENT_SEARCHES_KEY);

@@ -15,6 +15,7 @@ import { SmartPlaylistModal } from '../components/playlist/SmartPlaylistModal';
 import { radioEngine, LANGUAGE_RADIO_STATIONS } from '../services/audio/RadioEngine';
 import { ArtworkImage } from '../utils/artwork';
 import { ResponsiveAdBanner } from '../components/ads/AdSlot';
+import { DiscoverFavoritesAndStyle } from '../components/discovery/DiscoverFavoritesAndStyle';
 import {
   Play,
   Flame,
@@ -181,6 +182,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           </button>
         </div>
       </div>
+
+      {/* ─── DISCOVER OUR FAVOURITES & MAKE UP YOUR STYLE ─────────────────── */}
+      <DiscoverFavoritesAndStyle
+        onSearchSelect={(q) => onNavigate(`/discover?focus=search&q=${encodeURIComponent(q)}`)}
+        onNavigate={onNavigate}
+      />
 
       {/* ─── 2. CONTINUE LISTENING (MOBILE CAROUSEL / DESKTOP GRID) ─────────── */}
       <section className="space-y-3">
