@@ -59,10 +59,20 @@ export const VideoFrameSpectrum: React.FC<VideoFrameSpectrumProps> = ({
     const rightBars = new Float32Array(NUM_SIDE_BARS);
     const rightPeaks = new Float32Array(NUM_SIDE_BARS);
 
+    let containerW = 0;
+    let containerH = 0;
+
     const render = () => {
-      const width = canvas.width;
-      const height = canvas.height;
-      ctx.clearRect(0, 0, width, height);
+      const dpr = window.devicePixelRatio || 1;
+      const logicalW = containerW + 80;
+      const logicalH = containerH + 80;
+
+      if (logicalW <= 80 || logicalH <= 80) {
+        animId = requestAnimationFrame(render);
+        return;
+      }
+
+      ctx.clearRect(0, 0, logicalW, logicalH);
 
       const now = performance.now();
       const currentSec = audioManager.getState().currentTime;
@@ -87,14 +97,10 @@ export const VideoFrameSpectrum: React.FC<VideoFrameSpectrumProps> = ({
       smoothBounce *= 0.88;
       phase += isPlaying ? 0.05 : 0.008;
 
-      // Generous padding so perimeter equalizer bars have 36px+ clear room to shoot outward
-      const PAD_X = 40;
-      const PAD_Y = 40;
-
-      const innerX = PAD_X;
-      const innerY = PAD_Y;
-      const innerW = width - PAD_X * 2;
-      const innerH = height - PAD_Y * 2;
+      const innerX = 40;
+      const innerY = 40;
+      const innerW = containerW;
+      const innerH = containerH;
 
       if (innerW > 50 && innerH > 50) {
         // ── 1. Refined Studio Acoustic Perimeter Frame (Non-intrusive) ──
@@ -273,9 +279,12 @@ export const VideoFrameSpectrum: React.FC<VideoFrameSpectrumProps> = ({
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
         if (width > 0 && height > 0) {
-          // Add pad to canvas buffer to accommodate 40px perimeter bars
-          canvas.width = Math.floor(width + 80);
-          canvas.height = Math.floor(height + 80);
+          containerW = Math.floor(width);
+          containerH = Math.floor(height);
+          const dpr = window.devicePixelRatio || 1;
+          canvas.width = Math.floor((width + 80) * dpr);
+          canvas.height = Math.floor((height + 80) * dpr);
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         }
       }
     });

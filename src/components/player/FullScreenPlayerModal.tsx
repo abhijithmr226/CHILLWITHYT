@@ -51,7 +51,8 @@ import {
   Check,
   Loader2,
   CornerDownRight,
-  Users
+  Users,
+  Mic2
 } from 'lucide-react';
 
 export const FullScreenPlayerModal: React.FC = () => {
@@ -673,25 +674,35 @@ export const FullScreenPlayerModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Mobile Up Next Quick Drawer Trigger Bar */}
-            <button
-              onClick={() => {
-                setActiveSideTab('up_next');
-                setIsMobileSheetOpen(true);
-              }}
-              className="lg:hidden w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-[#161619] hover:bg-[#202025] border border-white/10 active:scale-[0.99] transition shadow-md mt-1 cursor-pointer"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <ListMusic className="w-4 h-4 text-[#FF0000] shrink-0" />
-                <span className="text-xs font-semibold text-white truncate">
-                  Up Next {playback.queue.length > 0 ? `· ${playback.queue.length} in queue` : ''}
-                </span>
-              </div>
-              <div className="flex items-center gap-1 text-[11px] text-[#888888] font-medium shrink-0">
-                <span>View Queue</span>
-                <ChevronDown className="w-3.5 h-3.5 rotate-180 text-white/60" />
-              </div>
-            </button>
+            {/* Mobile Up Next & Lyrics Quick Trigger Bar */}
+            <div className="lg:hidden flex items-center gap-2 mt-1 w-full">
+              <button
+                onClick={() => {
+                  setActiveSideTab('up_next');
+                  setIsMobileSheetOpen(true);
+                }}
+                className="flex-1 flex items-center justify-between px-3 py-2 rounded-xl bg-[#161619] hover:bg-[#202025] border border-white/10 active:scale-[0.99] transition shadow-md cursor-pointer"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <ListMusic className="w-4 h-4 text-[#FF0000] shrink-0" />
+                  <span className="text-xs font-semibold text-white truncate">
+                    Queue {playback.queue.length > 0 ? `(${playback.queue.length})` : ''}
+                  </span>
+                </div>
+                <ChevronDown className="w-3.5 h-3.5 rotate-180 text-white/60 shrink-0" />
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveSideTab('lyrics');
+                  setIsMobileSheetOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#161619] hover:bg-[#202025] border border-white/10 active:scale-[0.99] transition shadow-md cursor-pointer"
+              >
+                <Mic2 className="w-4 h-4 text-[#FF0000] shrink-0" />
+                <span className="text-xs font-semibold text-white">Lyrics</span>
+              </button>
+            </div>
           </div>
         </div>
 

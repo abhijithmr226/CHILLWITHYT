@@ -4,8 +4,6 @@ import { FirebaseAuthService } from './services/firebase/auth';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { MobileNav } from './components/layout/MobileNav';
-import { DesktopAppHeader } from './components/layout/DesktopAppHeader';
-import { MobileHeader } from './components/layout/MobileHeader';
 import { InstallAppPrompt } from './components/pwa/InstallAppPrompt';
 import { GlobalBottomPlayer } from './components/player/GlobalBottomPlayer';
 import { MobileMiniPlayer } from './components/player/MobileMiniPlayer';
@@ -181,20 +179,9 @@ export function App() {
   const isRoomView = currentPath.startsWith('/room/');
 
   return (
-    <div className="h-screen h-[100dvh] bg-[#0F0F0F] text-[#F1F1F1] flex flex-col font-sans antialiased selection:bg-[#FF0000]/30 overflow-hidden">
-      {/* 1. Desktop Window Frame Header (Spotify/Electron Client Software Look) */}
-      <DesktopAppHeader onOpenInstallModal={() => setIsInstallModalOpen(true)} />
-
-      {/* 2. Mobile App Header (iOS/Android Native Music App Bar - only on mobile app mode) */}
+    <div className="h-screen h-[100dvh] bg-[#0A0A0C] text-[#F5F5F5] flex flex-col font-sans antialiased selection:bg-[#FF0000]/30 overflow-hidden">
+      {/* 1. Unified 64px Top Header */}
       {viewMode === 'app' && !isRoomView && (
-        <MobileHeader
-          onNavigate={navigate}
-          onOpenInstallModal={() => setIsInstallModalOpen(true)}
-        />
-      )}
-
-      {/* 3. Main Navigation Bar */}
-      <div className={viewMode === 'app' && !isRoomView ? 'hidden md:block' : 'block'}>
         <Navbar
           currentPath={currentPath}
           onNavigate={(path) => {
@@ -204,11 +191,11 @@ export function App() {
           onSearch={(q) => setSearchQuery(q)}
           onOpenInstallModal={() => setIsInstallModalOpen(true)}
         />
-      </div>
+      )}
 
       {/* Main App Layout */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar on desktop (hidden in landing mode and room view to maximize screen space) */}
+        {/* Left Sidebar on desktop (hidden in landing mode and room view) */}
         {viewMode === 'app' && !isRoomView && (
           <Sidebar
             currentPath={currentPath}
@@ -217,8 +204,8 @@ export function App() {
           />
         )}
 
-        {/* Dynamic Page Content */}
-        <main className={`flex-1 ${!isRoomView ? 'overflow-y-auto pb-36 sm:pb-28' : 'overflow-hidden flex flex-col'}`}>
+        {/* Dynamic Page Content with bottom clearance for persistent player */}
+        <main className={`flex-1 ${!isRoomView ? 'overflow-y-auto pb-[136px] md:pb-[104px]' : 'overflow-hidden flex flex-col'}`}>
           {renderPage()}
         </main>
       </div>

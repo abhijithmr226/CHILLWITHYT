@@ -403,6 +403,14 @@ class AudioManager {
       await this.audioContext.resume().catch(() => {});
     }
 
+    // If the exact same song is already playing, do NOT restart playback!
+    if (this.state.currentSong?.id === song.id && (this.state.isPlaying || this.state.isBuffering)) {
+      if (startSeconds > 0 && Math.abs(this.state.currentTime - startSeconds) > 2) {
+        this.seek(startSeconds);
+      }
+      return;
+    }
+
     if (newQueue && newQueue.length > 0) {
       this.setQueue(newQueue, song);
     } else if (this.state.queue.length === 0) {

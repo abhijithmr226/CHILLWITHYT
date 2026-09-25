@@ -4,6 +4,7 @@ import { audioManager, PlaybackState } from '../../services/audio/AudioManager';
 import { radioEngine } from '../../services/audio/RadioEngine';
 import { MusicService } from '../../services/audio/MusicService';
 import { ArtworkImage } from '../../utils/artwork';
+import { LyricsService, SongLyrics } from '../../services/audio/LyricsService';
 import {
   ListMusic,
   Sparkles,
@@ -20,7 +21,9 @@ import {
   Loader2,
   X,
   ListPlus,
-  CornerDownRight
+  CornerDownRight,
+  Mic2,
+  ExternalLink
 } from 'lucide-react';
 
 const formatTime = (seconds: number) => {
@@ -29,7 +32,7 @@ const formatTime = (seconds: number) => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-export type PlayerTabType = 'up_next' | 'related';
+export type PlayerTabType = 'up_next' | 'lyrics' | 'related';
 
 interface YouTubeMusicPlayerTabsProps {
   currentSong: Song | null;
@@ -72,10 +75,27 @@ export const YouTubeMusicPlayerTabs: React.FC<YouTubeMusicPlayerTabsProps> = ({
   const [relatedTracks, setRelatedTracks] = useState<Song[]>([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
 
+  // Lyrics state
+  const [lyrics, setLyrics] = useState<SongLyrics | null>(null);
+  const [progress, setProgress] = useState({ currentTime: playback.currentTime, duration: playback.duration });
+  const activeLineRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    return audioManager.subscribeProgress(setProgress);
+  }, []);
+
+  useEffect(() => {
+    if (currentSong) {
+      setLyrics(LyricsService.getLyricsForSong(currentSong));
+    } else {
+      setLyrics(null);
+    }
+  }, [currentSong?.id]);
+
   // Keep activeTab synced with defaultTab prop changes
   useEffect(() => {
     if (defaultTab) {
-      setActiveTab(defaultTab === 'related' ? 'related' : 'up_next');
+      setActiveTab(defaultTab);
     }
   }, [defaultTab]);
 
@@ -209,6 +229,18 @@ export const YouTubeMusicPlayerTabs: React.FC<YouTubeMusicPlayerTabsProps> = ({
                 {playback.queue.length}
               </span>
             )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('lyrics')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition cursor-pointer ${
+              activeTab === 'lyrics'
+                ? 'bg-[#FF0000] text-white shadow-md'
+                : 'text-[#AAAAAA] hover:text-white hover:bg-[#272727]'
+            }`}
+          >
+            <Mic2 className="w-3.5 h-3.5" />
+            <span>Lyrics</span>
           </button>
 
           <button
@@ -515,6 +547,93 @@ export const YouTubeMusicPlayerTabs: React.FC<YouTubeMusicPlayerTabsProps> = ({
                 })
               )}
             </div>
+          </div>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────────
+            TAB: LYRICS (Real-time synchronized & fallback search)
+        ───────────────────────────────────────────────────────────── */}
+        {activeTab === 'lyrics' && (
+          <div className="space-y-4 py-2">
+            {lyrics && lyrics.lines.length > 0 ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between px-2 pb-2 border-b border-white/10 text-xs text-[#888888]">
+                  <span className="flex items-center gap-1.5 text-white font-semibold">
+                    <Mic2 className="w-3.5 h-3.5 text-[#FF0000]" />
+                    Synchronized Lyrics
+                  </span>
+                  <span className="text-[10px] text-emerald-400 font-medium bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    Live Sync
+                  </span>
+                </div>
+
+                <div className="space-y-2 py-2">
+                  {lyrics.lines.map((line, idx) => {
+                    const nextLine = lyrics.lines[idx + 1];
+                    const isCurrent = progress.currentTime >= line.time && (!nextLine || progress.currentTime < nextLine.time);
+
+                    return (
+                      <div
+                        key={line.id}
+                        ref={isCurrent ? activeLineRef : null}
+                        onClick={() => audioManager.seek(line.time)}
+                        className={`transition-all duration-300 rounded-xl px-3 py-2 cursor-pointer ${
+                          isCurrent
+                            ? 'text-white font-black text-base sm:text-lg bg-gradient-to-r from-[#FF0000]/25 via-[#FF0000]/10 to-transparent border-l-4 border-[#FF0000] shadow-md scale-[1.01]'
+                            : 'text-[#666666] hover:text-[#CCCCCC] font-medium text-xs sm:text-sm'
+                        }`}
+                      >
+                        <p className="leading-relaxed">{line.text}</p>
+                        {line.translation && (
+                          <p className="text-[11px] text-[#888888] font-normal mt-0.5">{line.translation}</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {lyrics.copyrightNotice && (
+                  <p className="text-[10px] text-[#555555] text-center pt-4 border-t border-white/5">
+                    {lyrics.copyrightNotice}
+                  </p>
+                )}
+              </div>
+            ) : (
+              /* Lyrics Unavailable Fallback (Section 34 & Bug 10) */
+              <div className="py-12 px-4 text-center space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-[#1A1A1E] border border-white/10 flex items-center justify-center mx-auto text-[#666666]">
+                  <Mic2 className="w-7 h-7 text-[#888888]" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white">Lyrics aren't available for this song.</h4>
+                  <p className="text-xs text-[#777777] mt-1 max-w-xs mx-auto">
+                    We don't have synchronized lines for this audio track yet. You can look it up online below.
+                  </p>
+                </div>
+                {currentSong && (
+                  <div className="flex items-center justify-center gap-2 pt-2">
+                    <a
+                      href={LyricsService.getGeniusSearchUrl(currentSong)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#222228] hover:bg-[#2A2A32] border border-white/10 text-xs font-semibold text-white transition"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 text-[#FF0000]" />
+                      <span>Search Genius</span>
+                    </a>
+                    <a
+                      href={LyricsService.getGoogleSearchUrl(currentSong)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#222228] hover:bg-[#2A2A32] border border-white/10 text-xs font-semibold text-white transition"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 text-[#FF0000]" />
+                      <span>Search Google</span>
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 

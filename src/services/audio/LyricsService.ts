@@ -135,32 +135,15 @@ export class LyricsService {
       }
     }
 
-    // Dynamic lyrical structure tailored to song duration & mood
-    const duration = song.duration || 210;
-    const interval = Math.max(8, Math.floor(duration / 12));
-    
-    const lines: LyricLine[] = [
-      { id: 'l-0', time: 0, text: `♪ (${song.artist} — Instrumental Intro) ♪` },
-      { id: 'l-1', time: Math.min(12, interval), text: `${song.title}` },
-      { id: 'l-2', time: interval * 2, text: `Vocals and arrangement by ${song.artist}` },
-      { id: 'l-3', time: interval * 3, text: 'Feel the rhythm flow through the silence' },
-      { id: 'l-4', time: interval * 4, text: 'Every melody tells a story in the night' },
-      { id: 'l-5', time: interval * 5, text: `♪ (Chorus — ${song.title}) ♪` },
-      { id: 'l-6', time: interval * 6, text: 'Lost inside the sound and time' },
-      { id: 'l-7', time: interval * 7, text: 'Chasing the echo of tomorrow' },
-      { id: 'l-8', time: interval * 8, text: `♪ (Bridge & Melodic Hook) ♪` },
-      { id: 'l-9', time: interval * 9, text: 'When the music plays, all words fade away' },
-      { id: 'l-10', time: interval * 10, text: `♪ (${song.artist} Outro) ♪` },
-    ];
-
+    // If no verified lyrics match, return clean unavailable state
     return {
       songId: song.id,
       title: song.title,
       artist: song.artist,
-      hasSync: true,
+      hasSync: false,
       source: 'synthesized',
-      lines,
-      copyrightNotice: 'Lyrics format active. Click below to view external full transcript on Genius or Google.'
+      lines: [],
+      copyrightNotice: "Lyrics aren't available for this song."
     };
   }
 

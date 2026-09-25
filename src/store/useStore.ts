@@ -648,6 +648,38 @@ class Store {
     this.setState({ playlists });
   }
 
+  public reorderPlaylist(playlistId: string, newSongs: Song[]) {
+    const playlists = this.state.playlists.map(p => {
+      if (p.id === playlistId) {
+        const updated = {
+          ...p,
+          songs: newSongs,
+          songsCount: newSongs.length,
+        };
+        SupabaseDbService.syncPlaylist(updated).catch(() => {});
+        return updated;
+      }
+      return p;
+    });
+    this.setState({ playlists });
+  }
+
+  public renamePlaylist(playlistId: string, name: string, description?: string) {
+    const playlists = this.state.playlists.map(p => {
+      if (p.id === playlistId) {
+        const updated = {
+          ...p,
+          name,
+          description: description !== undefined ? description : p.description,
+        };
+        SupabaseDbService.syncPlaylist(updated).catch(() => {});
+        return updated;
+      }
+      return p;
+    });
+    this.setState({ playlists });
+  }
+
   public createRoom(roomData: Partial<Room> & { seedSong?: Song | null; initialQueue?: Song[] }): Room {
     const user = this.state.currentUser;
     const initialTrack = roomData.seedSong || roomData.currentSong || (roomData.initialQueue && roomData.initialQueue[0]) || DEFAULT_TRACKS[0];
@@ -695,10 +727,20 @@ class Store {
       },
     }));
 
-    const updatedRooms = [newRoom, ...this.state.rooms];
+    // Deduplicate rooms: if room with same name exists for this user, update it rather than duplicating
+    const existingIndex = this.state.rooms.findIndex(
+      (r) => r.id === newRoom.id || (r.ownerId === newRoom.ownerId && r.name.toLowerCase().trim() === newRoom.name.toLowerCase().trim())
+    );
+    let updatedRooms: Room[];
+    if (existingIndex !== -1) {
+      updatedRooms = [...this.state.rooms];
+      updatedRooms[existingIndex] = { ...updatedRooms[existingIndex], ...newRoom, id: updatedRooms[existingIndex].id };
+    } else {
+      updatedRooms = [newRoom, ...this.state.rooms];
+    }
     this.setState({ 
       rooms: updatedRooms, 
-      currentRoom: newRoom,
+      currentRoom: existingIndex !== -1 ? updatedRooms[existingIndex] : newRoom,
       roomQueue: initialQueueItems
     });
 

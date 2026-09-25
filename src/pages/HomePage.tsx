@@ -2,14 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { audioManager } from '../services/audio/AudioManager';
 import { 
-  DEFAULT_TRACKS, 
   getTracksByTag, 
   getTracksByLanguage, 
-  getDiverseSampleTracks 
+  getDiverseSampleTracks,
+  DEFAULT_PLAYLISTS
 } from '../services/audio/DefaultMusicProvider';
-import {
-  YOUTUBE_REGIONS,
-} from '../services/audio/YouTubeDataApi';
+import { YOUTUBE_REGIONS } from '../services/audio/YouTubeDataApi';
 import { Song, UserMusicPreferences } from '../types';
 import { 
   DAILY_MIX_CONFIGS, 
@@ -19,8 +17,6 @@ import {
 import { SmartPlaylistModal } from '../components/playlist/SmartPlaylistModal';
 import { radioEngine, LANGUAGE_RADIO_STATIONS } from '../services/audio/RadioEngine';
 import { ArtworkImage } from '../utils/artwork';
-import { ResponsiveAdBanner } from '../components/ads/AdSlot';
-import { DiscoverFavoritesAndStyle } from '../components/discovery/DiscoverFavoritesAndStyle';
 import {
   Play,
   Flame,
@@ -29,30 +25,28 @@ import {
   Plus,
   Loader2,
   Users,
+  Compass,
+  ListMusic,
+  Check,
+  Disc,
+  Mic2,
   Sparkles,
   ArrowRight,
-  Wand2,
-  RefreshCw,
   TrendingUp,
-  Headphones,
   Clock,
-  Disc,
-  Check
+  RefreshCw,
 } from 'lucide-react';
 
 interface HomePageProps {
   onNavigate: (path: string) => void;
 }
 
-// Region- and taste-aware smart fallback so users never see the same static template songs
 const getFallbackTrending = (region: string, preferences?: UserMusicPreferences | null): Song[] => {
-  // If region is Western or Global, return English / Global Pop tracks
   if (['US', 'GB', 'CA', 'AU', 'GLOBAL'].includes(region)) {
     const pop = getTracksByTag('english');
     if (pop.length > 0) return pop.slice(0, 12);
   }
 
-  // If user selected languages in their taste profile, prioritize their languages
   if (preferences && preferences.completedOnboarding && (preferences.languages || []).length > 0) {
     const matched: Song[] = [];
     for (const lang of preferences.languages) {
@@ -63,7 +57,6 @@ const getFallbackTrending = (region: string, preferences?: UserMusicPreferences 
     }
   }
 
-  // Authentic, balanced multi-genre Indian & Global charts mix (Hindi, English, Punjabi, Tamil, Malayalam)
   return getDiverseSampleTracks(12);
 };
 
@@ -78,16 +71,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   // Daily Mix Generator Modal State
   const [isSmartModalOpen, setIsSmartModalOpen] = useState(false);
   const [playingMixId, setPlayingMixId] = useState<string | null>(null);
-
-  // Greeting
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
-  };
-
-  const displayName = state.currentUser?.displayName || 'Friend';
 
   // Fetch real YouTube trending music for the active region
   useEffect(() => {
@@ -118,6 +101,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     setTimeout(() => setAddedQueueSongId(null), 1800);
   };
 
+  const handlePlayAllTrending = () => {
+    if (trendingTracks.length > 0) {
+      audioManager.playSong(trendingTracks[0], trendingTracks);
+    }
+  };
+
   const handlePlayDailyMix = async (mix: DailyMixConfig) => {
     try {
       setPlayingMixId(mix.id);
@@ -127,12 +116,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       }
     } finally {
       setPlayingMixId(null);
-    }
-  };
-
-  const handlePlayAllTrending = () => {
-    if (trendingTracks.length > 0) {
-      audioManager.playSong(trendingTracks[0], trendingTracks);
     }
   };
 
@@ -148,280 +131,141 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     setLoadingTrending(false);
   };
 
-  // Continue listening source: only real history played by the user
-  const continueListeningTracks: Song[] = state.history && state.history.length > 0
-    ? state.history.map((h) => h.song).filter((s): s is Song => !!(s && s.id)).slice(0, 8)
-    : [];
+  // Popular Artists list
+  const popularArtists = useMemo(() => {
+    return [
+      { name: 'Arijit Singh', genre: 'Bollywood · Soul', image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&fit=crop', initial: 'AS' },
+      { name: 'Anirudh Ravichander', genre: 'Mass EDM · Tamil', image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&fit=crop', initial: 'AR' },
+      { name: 'Sushin Shyam', genre: 'Indie Electronic · Malayalam', image: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400&fit=crop', initial: 'SS' },
+      { name: 'Diljit Dosanjh', genre: 'Punjabi Pop · Desi', image: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=400&fit=crop', initial: 'DD' },
+      { name: 'The Weeknd', genre: 'R&B · Synth Pop', image: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=400&fit=crop', initial: 'TW' },
+      { name: 'Dua Lipa', genre: 'Dance Pop · Disco', image: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=400&fit=crop', initial: 'DL' },
+    ];
+  }, []);
+
+  // Curated playlists to display (mix of user playlists and curated presets)
+  const curatedPlaylists = useMemo(() => {
+    if (state.playlists && state.playlists.length >= 6) {
+      return state.playlists.slice(0, 6);
+    }
+    const combined = [...state.playlists, ...DEFAULT_PLAYLISTS];
+    return combined.slice(0, 6);
+  }, [state.playlists]);
 
   const currentRegionMeta = YOUTUBE_REGIONS.find((r) => r.code === selectedRegion) || YOUTUBE_REGIONS[0];
 
-  // Dynamically prioritize Daily Mixes based on user onboarding preferences
-  const personalizedDailyMixes = useMemo(() => {
-    if (!state.musicPreferences?.completedOnboarding) return DAILY_MIX_CONFIGS;
-    const langs = (state.musicPreferences.languages || []).map(l => l.toLowerCase());
-    const genres = (state.musicPreferences.genres || []).map(g => g.toLowerCase());
-
-    return [...DAILY_MIX_CONFIGS].sort((a, b) => {
-      let scoreA = 0;
-      let scoreB = 0;
-      if (langs.includes('english') || genres.includes('pop')) {
-        if (a.id === 'daily-mix-5') scoreA += 5;
-        if (b.id === 'daily-mix-5') scoreB += 5;
-      }
-      if (langs.includes('hindi') || genres.includes('bollywood') || genres.includes('romance')) {
-        if (a.id === 'daily-mix-2') scoreA += 5;
-        if (b.id === 'daily-mix-2') scoreB += 5;
-      }
-      if (langs.includes('punjabi')) {
-        if (a.id === 'daily-mix-3') scoreA += 5;
-        if (b.id === 'daily-mix-3') scoreB += 5;
-      }
-      if (langs.includes('telugu')) {
-        if (a.id === 'daily-mix-4') scoreA += 5;
-        if (b.id === 'daily-mix-4') scoreB += 5;
-      }
-      if (langs.includes('malayalam') || langs.includes('tamil')) {
-        if (a.id === 'daily-mix-1') scoreA += 5;
-        if (b.id === 'daily-mix-1') scoreB += 5;
-      }
-      if (genres.includes('chill') || genres.includes('lofi')) {
-        if (a.id === 'daily-mix-6') scoreA += 5;
-        if (b.id === 'daily-mix-6') scoreB += 5;
-      }
-      return scoreB - scoreA;
-    });
-  }, [state.musicPreferences]);
-
-  // Curated spotlight artists, dynamically enriched with user's selected artists
-  const spotlightArtists = useMemo(() => {
-    const base = [
-      { name: 'Arijit Singh', genre: 'Soul • Acoustic Bollywood', initial: 'AS' },
-      { name: 'The Weeknd', genre: 'Synthwave • Global R&B', initial: 'TW' },
-      { name: 'Anirudh Ravichander', genre: 'Mass EDM • Film Score', initial: 'AR' },
-      { name: 'Diljit Dosanjh', genre: 'Punjabi Pop • Urban Desi', initial: 'DD' },
-      { name: 'Sushin Shyam', genre: 'Indie Electronic • Malayalam', initial: 'SS' },
-      { name: 'Dua Lipa', genre: 'Dance Pop • Disco', initial: 'DL' },
-    ];
-    if (state.musicPreferences?.artists && state.musicPreferences.artists.length > 0) {
-      const userArtists = state.musicPreferences.artists.map(a => ({
-        name: a,
-        genre: 'Your Favorite Artist',
-        initial: a.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-      }));
-      const combined = [...userArtists, ...base];
-      return combined.filter((v, i, a) => a.findIndex(t => t.name.toLowerCase() === v.name.toLowerCase()) === i).slice(0, 6);
-    }
-    return base;
-  }, [state.musicPreferences]);
-
   return (
-    <div className="space-y-8 sm:space-y-10 p-4 sm:p-8 select-none max-w-7xl mx-auto">
-      {/* ─── 1. HERO HEADER WITH DISCIPLINED ACTION HIERARCHY ────────────────── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 bg-gradient-to-r from-[#202024] via-[#18181A] to-[#202024] p-5 sm:p-7 rounded-3xl border border-[#2D2D32] shadow-xl relative overflow-hidden">
-        <div className="space-y-2 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.06] text-white text-xs font-semibold border border-white/10">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Real-time YouTube streaming • High-fidelity audio</span>
-          </div>
-          <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-            {getGreeting()}, {displayName}
-          </h1>
-          <p className="text-xs sm:text-sm text-[#CCCCCC]">
-            Explore trending charts, stream top hits, and generate custom mixes.
-          </p>
-        </div>
+    <div className="space-y-10 p-4 sm:p-6 lg:p-8 max-w-[1440px] mx-auto select-none">
+      {/* ─── 1. HERO SECTION (250–300px desktop, Cinematic Music Background) ─── */}
+      <section className="relative h-[250px] sm:h-[280px] rounded-2xl overflow-hidden shadow-2xl border border-white/[0.07] flex items-center justify-between p-6 sm:p-10">
+        {/* Background artwork image with dark gradient overlay */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: `url('https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1600&fit=crop')`,
+          }}
+        />
+        {/* Dark radial & linear gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0C] via-[#0A0A0C]/90 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0C] via-transparent to-black/40" />
 
-        {/* Primary and Secondary CTA hierarchy */}
-        <div className="flex flex-wrap items-center gap-2.5 relative z-10">
-          {/* Resume Session Button if paused track exists */}
-          {audioManager.getState().currentSong && !audioManager.getState().isPlaying ? (
-            <button
-              onClick={() => audioManager.play()}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#FF0000] hover:bg-[#CC0000] text-white text-xs font-bold transition shadow-lg shadow-red-900/40 cursor-pointer"
-              title="Resume playback from where you left off"
-            >
-              <Play className="w-4 h-4 fill-current" />
-              <span className="truncate max-w-[180px]">Resume: {audioManager.getState().currentSong?.title}</span>
-            </button>
-          ) : (
+        {/* Content */}
+        <div className="relative z-10 max-w-xl space-y-3">
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#FF0000]/15 border border-[#FF0000]/30 text-white text-[11px] font-bold tracking-wide">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FF0000] animate-pulse" />
+            <span>SYNCHRONIZED MUSIC PLATFORM</span>
+          </div>
+
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight uppercase font-sans">
+            Good Music.<br />
+            <span className="text-[#FF0000]">Better Together.</span>
+          </h1>
+
+          <p className="text-xs sm:text-sm text-[#A1A1A1] max-w-lg leading-relaxed">
+            Listen to your favorite songs, create rooms, chat with friends and enjoy the vibe.
+          </p>
+
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             <button
               onClick={handlePlayAllTrending}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#FF0000] hover:bg-[#CC0000] text-white text-xs font-bold transition shadow-lg shadow-red-900/40 cursor-pointer"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#FF0000] hover:bg-[#E50914] text-white text-xs font-bold transition shadow-lg shadow-red-950/40 hover:scale-105 active:scale-95 cursor-pointer uppercase tracking-wider"
             >
-              <Play className="w-4 h-4 fill-current" />
-              <span>Play Top Charts</span>
+              <Play className="w-4 h-4 fill-current ml-0.5" />
+              <span>Start Listening</span>
             </button>
-          )}
 
-          {/* Resume from Liked Songs button */}
-          {(state.likedSongs.length > 0 || state.likedSongIds.length > 0) && (
             <button
-              onClick={() => store.resumeFromLikedSongs()}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.15] border border-white/10 text-white text-xs font-semibold transition cursor-pointer"
-              title="Resume playback from your liked collection"
+              onClick={() => store.setState({ isCreateRoomModalOpen: true })}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#141418] hover:bg-[#1C1C22] border border-white/[0.12] text-white text-xs font-bold transition cursor-pointer hover:border-white/25 active:scale-95 uppercase tracking-wider"
             >
-              <Heart className="w-3.5 h-3.5 text-red-500 fill-current" />
-              <span>Resume from Liked ({state.likedSongs.length || state.likedSongIds.length})</span>
-            </button>
-          )}
-
-          {/* Secondary Actions */}
-          <button
-            onClick={() => setIsSmartModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white text-xs font-semibold transition cursor-pointer"
-          >
-            <Wand2 className="w-4 h-4 text-red-400" />
-            <span>Daily Mix</span>
-          </button>
-
-          <button
-            onClick={() => store.openTasteOnboarding()}
-            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white text-xs font-semibold transition cursor-pointer"
-          >
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>Tune Taste</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ─── DISCOVER OUR FAVOURITES & MAKE UP YOUR STYLE ─────────────────── */}
-      <DiscoverFavoritesAndStyle
-        onSearchSelect={(q) => onNavigate(`/discover?focus=search&q=${encodeURIComponent(q)}`)}
-        onNavigate={onNavigate}
-      />
-
-      {/* ─── 2. CONTINUE LISTENING (ONLY WHEN REAL USER HISTORY EXISTS) ─────────── */}
-      {continueListeningTracks.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-red-500" />
-              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                Continue Listening
-              </h2>
-            </div>
-            <button
-              onClick={() => onNavigate('/history')}
-              className="text-xs text-[#AAAAAA] hover:text-white font-medium flex items-center gap-1 cursor-pointer transition"
-            >
-              <span>History</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <Users className="w-4 h-4 text-[#FF0000]" />
+              <span>Create Room</span>
             </button>
           </div>
-
-          {/* Horizontal Carousel on Mobile; Responsive Grid on Desktop */}
-          <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 pb-2 sm:pb-0 overscroll-x-contain no-scrollbar">
-            {continueListeningTracks.map((song) => {
-              const isJustQueued = addedQueueSongId === song.id;
-              return (
-                <div
-                  key={`cont-${song.id}`}
-                  onClick={() => handlePlaySong(song, continueListeningTracks)}
-                  className="group cursor-pointer rounded-2xl bg-[#18181A] hover:bg-[#222226] border border-[#27272A] hover:border-[#3E3E44] p-2.5 transition duration-200 flex flex-col justify-between shadow-sm relative overflow-hidden min-w-[145px] sm:min-w-0 shrink-0"
-                >
-                  {/* 16:9 Thumbnail Box */}
-                  <div className="relative aspect-video rounded-xl overflow-hidden mb-2 bg-neutral-900 border border-white/10 shadow-sm">
-                    <ArtworkImage
-                      song={song}
-                      alt={song.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
-                      <div className="w-8 h-8 rounded-full bg-[#FF0000] text-white flex items-center justify-center shadow-lg">
-                        <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="min-w-0">
-                    <h4 className="text-xs font-bold text-white truncate group-hover:text-red-400 transition">
-                      {song.title}
-                    </h4>
-                    <p className="text-[11px] text-[#AAAAAA] truncate mt-0.5">{song.artist}</p>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 mt-1.5 border-t border-white/5">
-                    <span className="text-[10px] font-mono text-[#888888]">
-                      {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}
-                    </span>
-                    <button
-                      onClick={(e) => handleAddToQueue(e, song)}
-                      className="p-1 rounded-lg text-[#AAAAAA] hover:text-white hover:bg-white/10 transition cursor-pointer"
-                      title="Add to Queue"
-                    >
-                      {isJustQueued ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Plus className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* ─── SPONSORED BANNER (NON-INTRUSIVE) ─────────────────────────────── */}
-      <ResponsiveAdBanner className="my-2" />
-
-      {/* ─── 3. MADE FOR YOU (PERSONALIZED DAILY MIXES) ─────────────────────── */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-              Made For You
-            </h2>
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/10 text-white border border-white/10">
-              Personalized
-            </span>
-          </div>
-
-          <button
-            onClick={() => setIsSmartModalOpen(true)}
-            className="text-xs text-red-400 hover:text-red-300 font-bold flex items-center gap-1 cursor-pointer transition"
-          >
-            <Wand2 className="w-3.5 h-3.5" />
-            <span>Generate Mix</span>
-          </button>
         </div>
 
-        {/* Horizontal Carousel on Mobile; Responsive Grid on Desktop */}
-        <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-3 lg:grid-cols-6 gap-3.5 pb-2 sm:pb-0 overscroll-x-contain no-scrollbar">
-          {personalizedDailyMixes.map((mix) => {
-            const isPlayingThis = playingMixId === mix.id;
+        {/* Right Subtle Artwork Badge on Desktop */}
+        <div className="hidden lg:flex items-center gap-4 relative z-10 pr-6">
+          <div className="w-40 h-40 rounded-xl overflow-hidden border border-white/10 shadow-2xl ring-1 ring-white/10 transform rotate-2 hover:rotate-0 transition duration-300">
+            <img 
+              src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&fit=crop" 
+              alt="Music" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ─── 2. QUICK ACCESS (Five Compact Cards) ───────────────────────────── */}
+      <section>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {[
+            {
+              label: 'Trending',
+              desc: 'Top viral charts',
+              icon: TrendingUp,
+              action: () => document.getElementById('trending-section')?.scrollIntoView({ behavior: 'smooth' }),
+            },
+            {
+              label: 'Radio',
+              desc: '12 Regional stations',
+              icon: Radio,
+              action: () => document.getElementById('radio-section')?.scrollIntoView({ behavior: 'smooth' }),
+            },
+            {
+              label: 'Playlists',
+              desc: 'Curated mixes',
+              icon: ListMusic,
+              action: () => onNavigate('/playlists'),
+            },
+            {
+              label: 'Discover',
+              desc: 'Search & genres',
+              icon: Compass,
+              action: () => onNavigate('/discover'),
+            },
+            {
+              label: 'Rooms',
+              desc: 'Social listening',
+              icon: Users,
+              action: () => onNavigate('/rooms'),
+            },
+          ].map((item) => {
+            const Icon = item.icon;
             return (
               <div
-                key={mix.id}
-                onClick={() => handlePlayDailyMix(mix)}
-                className="group cursor-pointer rounded-2xl p-3 bg-[#18181A] hover:bg-[#222226] border border-[#27272A] hover:border-[#3E3E44] transition flex flex-col justify-between shadow-sm relative overflow-hidden min-w-[155px] sm:min-w-0 shrink-0"
+                key={item.label}
+                onClick={item.action}
+                className="group cursor-pointer p-3.5 rounded-xl bg-[#111114] hover:bg-[#1A1A20] border border-white/[0.07] hover:border-[#FF0000]/40 transition duration-150 flex items-center gap-3 shadow-sm"
               >
-                <div className="relative aspect-square rounded-xl overflow-hidden mb-2.5 bg-neutral-900 shadow-sm border border-white/5">
-                  <ArtworkImage
-                    src={mix.coverImage}
-                    alt={mix.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                  />
-                  <div className="absolute top-2 left-2 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded text-[9px] font-bold text-red-400 border border-white/10">
-                    {mix.vibe}
-                  </div>
-
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
-                    <div className="w-9 h-9 rounded-full bg-[#FF0000] text-white flex items-center justify-center shadow-xl">
-                      {isPlayingThis ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Play className="w-4 h-4 fill-current ml-0.5" />
-                      )}
-                    </div>
-                  </div>
+                <div className="w-10 h-10 rounded-lg bg-[#16161B] group-hover:bg-[#FF0000]/15 flex items-center justify-center shrink-0 transition">
+                  <Icon className="w-5 h-5 text-[#A1A1A1] group-hover:text-[#FF0000] transition" />
                 </div>
-
-                <div>
-                  <h4 className="text-xs sm:text-sm font-bold text-white truncate group-hover:text-red-400 transition">
-                    {mix.title}
+                <div className="min-w-0">
+                  <h4 className="text-xs font-bold text-white group-hover:text-[#FF0000] transition truncate">
+                    {item.label}
                   </h4>
-                  <p className="text-[10px] text-[#AAAAAA] line-clamp-2 mt-0.5 leading-snug">
-                    {mix.subtitle}
-                  </p>
+                  <p className="text-[10px] text-[#666666] truncate mt-0.5">{item.desc}</p>
                 </div>
               </div>
             );
@@ -429,29 +273,29 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </div>
       </section>
 
-      {/* ─── 4. TRENDING NOW (DEFINITIVE RANKED CHART) ───────────────────────── */}
-      <section className="space-y-3">
+      {/* ─── 3. TRENDING NOW (Desktop: 5–6 cards, Tablet: 3–4, Mobile: 2 Horizontal) ─── */}
+      <section id="trending-section" className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-red-500" />
-              <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-[#FF0000]" />
+              <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight flex items-center gap-2">
                 <span>Trending Now</span>
-                <Flame className="w-3.5 h-3.5 text-red-500 fill-red-500" />
+                <Flame className="w-4 h-4 text-[#FF0000] fill-current" />
               </h2>
-              <span className="text-[10px] font-mono font-bold bg-white/10 text-white border border-white/10 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-mono font-bold bg-[#18181D] text-[#A1A1A1] border border-white/10 px-2 py-0.5 rounded">
                 {currentRegionMeta.flag} {currentRegionMeta.name.split(' ')[0]}
               </span>
             </div>
-            <p className="text-[11px] text-[#AAAAAA] mt-0.5">
-              Live YouTube charts • Updated {chartLastUpdated}
+            <p className="text-xs text-[#666666] mt-0.5">
+              Live YouTube music trends • Updated {chartLastUpdated}
             </p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={handlePlayAllTrending}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#FF0000] hover:bg-[#CC0000] text-white text-xs font-bold transition shadow-md cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#FF0000] hover:bg-[#E50914] text-white text-xs font-bold transition shadow-sm cursor-pointer"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span>Play All</span>
@@ -460,22 +304,22 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             <button
               onClick={handleRefreshTrending}
               disabled={loadingTrending}
-              className="p-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-[#CCCCCC] hover:text-white transition cursor-pointer"
-              title="Refresh Charts"
+              className="p-1.5 rounded-lg bg-[#141418] hover:bg-[#1A1A20] border border-white/[0.07] text-[#A1A1A1] hover:text-white transition cursor-pointer"
+              title="Refresh charts"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${loadingTrending ? 'animate-spin text-red-500' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${loadingTrending ? 'animate-spin text-[#FF0000]' : ''}`} />
             </button>
 
             {/* Region Filter Chips */}
-            <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
+            <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar">
               {YOUTUBE_REGIONS.slice(0, 5).map((reg) => (
                 <button
                   key={reg.code}
                   onClick={() => setSelectedRegion(reg.code)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition shrink-0 cursor-pointer ${
                     selectedRegion === reg.code
-                      ? 'bg-white/20 text-white font-bold border border-white/30'
-                      : 'bg-white/[0.05] text-[#AAAAAA] hover:text-white hover:bg-white/10 border border-transparent'
+                      ? 'bg-white/15 text-white font-bold border border-white/20'
+                      : 'bg-[#141418] text-[#777777] hover:text-white border border-transparent'
                   }`}
                 >
                   <span>{reg.flag}</span> <span className="hidden sm:inline">{reg.name.split(' ')[0]}</span>
@@ -486,13 +330,13 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </div>
 
         {loadingTrending ? (
-          <div className="py-12 flex items-center justify-center gap-2 text-xs text-[#AAAAAA]">
-            <Loader2 className="w-5 h-5 text-red-500 animate-spin" />
-            <span>Loading live charts...</span>
+          <div className="py-12 flex items-center justify-center gap-2 text-xs text-[#A1A1A1]">
+            <Loader2 className="w-5 h-5 text-[#FF0000] animate-spin" />
+            <span>Loading live trending songs...</span>
           </div>
         ) : (
-          /* Horizontal on Mobile; 6-Column Grid on Desktop */
-          <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-3 lg:grid-cols-6 gap-3 pb-2 sm:pb-0 overscroll-x-contain no-scrollbar">
+          /* Grid: Desktop 5-6 cards, Tablet 3-4, Mobile 2 cards scroll */
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
             {trendingTracks.slice(0, 12).map((song, idx) => {
               const isLiked = state.likedSongIds.includes(song.id);
               const rank = idx + 1;
@@ -501,52 +345,52 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
               return (
                 <div
                   key={song.id}
-                  className="group cursor-pointer rounded-2xl p-2.5 bg-[#18181A] hover:bg-[#222226] border border-[#27272A] hover:border-[#3E3E44] transition flex flex-col justify-between shadow-sm relative overflow-hidden min-w-[150px] sm:min-w-0 shrink-0"
+                  className="group cursor-pointer rounded-xl p-2.5 bg-[#111114] hover:bg-[#1A1A20] border border-white/[0.07] hover:border-white/[0.14] transition duration-150 flex flex-col justify-between shadow-sm relative overflow-hidden"
                 >
                   {/* Rank Badge */}
-                  <div className="absolute top-2 left-2 z-10 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10 flex items-center gap-1 shadow-md">
-                    <span className={`text-[11px] font-black font-mono ${rank <= 3 ? 'text-red-400' : 'text-white'}`}>
+                  <div className="absolute top-2 left-2 z-10 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-black font-mono flex items-center gap-1 border border-white/10 shadow">
+                    <span className={rank <= 3 ? 'text-[#FF0000]' : 'text-white'}>
                       #{rank}
                     </span>
-                    {rank <= 3 && <Flame className="w-3 h-3 text-red-500 fill-red-500" />}
                   </div>
 
-                  {/* 16:9 Thumbnail Box */}
+                  {/* 1:1 Aspect Ratio Artwork Box — NEVER distort */}
                   <div
                     onClick={() => handlePlaySong(song, trendingTracks)}
-                    className="relative aspect-video rounded-xl overflow-hidden mb-2 shadow-sm bg-neutral-900 border border-white/10"
+                    className="relative w-full aspect-square rounded-lg overflow-hidden mb-2 bg-[#0E0E12] border border-white/5"
                   >
                     <ArtworkImage
                       song={song}
                       alt={song.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                     />
-                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
-                      <div className="w-8 h-8 rounded-full bg-[#FF0000] text-white flex items-center justify-center shadow-lg">
-                        <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                      <div className="w-9 h-9 rounded-full bg-[#FF0000] text-white flex items-center justify-center shadow-lg">
+                        <Play className="w-4 h-4 fill-current ml-0.5" />
                       </div>
                     </div>
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <h4
                       onClick={() => handlePlaySong(song, trendingTracks)}
-                      className="text-xs font-bold text-white truncate hover:text-red-400 transition"
+                      className="text-xs font-bold text-[#F5F5F5] truncate hover:text-[#FF0000] transition"
+                      title={song.title}
                     >
                       {song.title}
                     </h4>
-                    <p className="text-[11px] text-[#AAAAAA] truncate mt-0.5">{song.artist}</p>
+                    <p className="text-[11px] text-[#A1A1A1] truncate mt-0.5">{song.artist}</p>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 mt-1.5 border-t border-white/5">
-                    <span className="text-[10px] font-mono text-[#888888]">
+                  <div className="flex items-center justify-between pt-2 mt-1.5 border-t border-white/[0.05]">
+                    <span className="text-[10px] font-mono text-[#666666]">
                       {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}
                     </span>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => store.toggleLikeSong(song.id, song)}
                         className={`p-1 rounded transition cursor-pointer ${
-                          isLiked ? 'text-red-500' : 'text-[#888888] hover:text-white'
+                          isLiked ? 'text-[#FF0000]' : 'text-[#666666] hover:text-white'
                         }`}
                         title="Like"
                       >
@@ -554,7 +398,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                       </button>
                       <button
                         onClick={(e) => handleAddToQueue(e, song)}
-                        className="p-1 rounded text-[#888888] hover:text-white transition cursor-pointer"
+                        className="p-1 rounded text-[#666666] hover:text-white transition cursor-pointer"
                         title="Add to queue"
                       >
                         {isJustQueued ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Plus className="w-3.5 h-3.5" />}
@@ -568,88 +412,210 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         )}
       </section>
 
-      {/* ─── 6. INFINITE RADIO STATIONS ─────────────────────────────────────── */}
-      <section className="space-y-3">
+      {/* ─── 4. POPULAR ARTISTS (Circular Artist Cards) ─────────────────────── */}
+      <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Radio className="w-4 h-4 text-red-500" />
-            <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-              Infinite Radio
-            </h2>
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/10 text-white">
-              24/7 Autoplay
-            </span>
-          </div>
-        </div>
-
-        {/* Horizontal Carousel on Mobile; 6-Column Grid on Desktop */}
-        <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 pb-2 sm:pb-0 overscroll-x-contain no-scrollbar">
-          {LANGUAGE_RADIO_STATIONS.slice(0, 12).map((station) => (
-            <div
-              key={station.id}
-              onClick={() => radioEngine.startLanguageStation(station.id)}
-              className="group cursor-pointer rounded-2xl p-3 bg-[#18181A] hover:bg-[#222226] border border-[#27272A] hover:border-red-500/40 transition flex flex-col justify-between shadow-sm relative overflow-hidden min-w-[145px] sm:min-w-0 shrink-0"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-2xl">{station.flag}</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 group-hover:animate-ping" />
-              </div>
-
-              <div className="mt-4">
-                <h4 className="text-xs font-bold text-white group-hover:text-red-400 transition truncate">
-                  {station.name}
-                </h4>
-                <p className="text-[10px] text-[#AAAAAA] line-clamp-1 mt-0.5">
-                  {station.language}
-                </p>
-              </div>
-
-              <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between">
-                <span className="text-[9px] font-mono text-emerald-400 font-bold">ON AIR</span>
-                <Play className="w-3 h-3 text-white fill-white group-hover:text-red-500 group-hover:fill-red-500 transition" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ─── 7. FEATURED ARTISTS SPOTLIGHT (DYNAMIC LINK TO /artist/:name) ──── */}
-      <section className="space-y-3 pb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Disc className="w-4 h-4 text-red-500" />
-            <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-              Featured Artists
+            <Mic2 className="w-5 h-5 text-[#FF0000]" />
+            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+              Popular Artists
             </h2>
           </div>
           <button
             onClick={() => onNavigate('/discover')}
-            className="text-xs text-[#AAAAAA] hover:text-white font-medium flex items-center gap-1 cursor-pointer transition"
+            className="text-xs text-[#A1A1A1] hover:text-white font-medium flex items-center gap-1 cursor-pointer transition"
           >
             <span>Explore All</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* Horizontal Carousel on Mobile; 6-Column Grid on Desktop */}
-        <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible sm:grid-cols-3 lg:grid-cols-6 gap-3 pb-2 sm:pb-0 overscroll-x-contain no-scrollbar">
-          {spotlightArtists.map((artist) => (
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+          {popularArtists.map((artist) => (
             <div
               key={artist.name}
               onClick={() => onNavigate(`/artist/${encodeURIComponent(artist.name)}`)}
-              className="group cursor-pointer rounded-2xl p-3 bg-[#18181A] hover:bg-[#222226] border border-[#27272A] hover:border-red-500/40 transition flex items-center gap-3 shadow-sm min-w-[180px] sm:min-w-0 shrink-0"
+              className="group cursor-pointer flex flex-col items-center text-center p-3 rounded-xl bg-[#111114] hover:bg-[#1A1A20] border border-white/[0.07] hover:border-white/15 transition duration-150 shadow-sm"
             >
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neutral-800 to-neutral-900 border border-white/10 flex items-center justify-center font-black text-xs text-red-400 shrink-0 group-hover:scale-105 group-hover:border-red-500/50 transition">
-                {artist.initial}
+              {/* Circular artwork */}
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mb-2.5 border-2 border-white/10 group-hover:border-[#FF0000] shadow-md transition duration-300">
+                <img
+                  src={artist.image}
+                  alt={artist.name}
+                  className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                  <Play className="w-5 h-5 text-white fill-current" />
+                </div>
               </div>
-              <div className="min-w-0">
-                <h5 className="text-xs font-bold text-white truncate group-hover:text-red-400 transition">
-                  {artist.name}
-                </h5>
-                <p className="text-[10px] text-[#AAAAAA] truncate">{artist.genre}</p>
+
+              <h4 className="text-xs font-bold text-white group-hover:text-[#FF0000] transition truncate w-full">
+                {artist.name}
+              </h4>
+              <p className="text-[10px] text-[#666666] truncate w-full mt-0.5">{artist.genre}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── 5. CURATED PLAYLISTS (6 Cards Desktop) ─────────────────────────── */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ListMusic className="w-5 h-5 text-[#FF0000]" />
+            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+              Curated Playlists
+            </h2>
+          </div>
+          <button
+            onClick={() => onNavigate('/playlists')}
+            className="text-xs text-[#A1A1A1] hover:text-white font-medium flex items-center gap-1 cursor-pointer transition"
+          >
+            <span>View All</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+          {curatedPlaylists.map((pl) => (
+            <div
+              key={pl.id}
+              onClick={() => onNavigate(`/playlist/${pl.id}`)}
+              className="group cursor-pointer rounded-xl p-2.5 bg-[#111114] hover:bg-[#1A1A20] border border-white/[0.07] hover:border-white/15 transition flex flex-col justify-between shadow-sm relative overflow-hidden"
+            >
+              <div className="relative aspect-square rounded-lg overflow-hidden mb-2 bg-[#0E0E12] border border-white/5">
+                <img
+                  src={pl.coverUrl}
+                  alt={pl.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                  <div className="w-9 h-9 rounded-full bg-[#FF0000] text-white flex items-center justify-center shadow-lg">
+                    <Play className="w-4 h-4 fill-current ml-0.5" />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-bold text-white truncate group-hover:text-[#FF0000] transition">
+                  {pl.name}
+                </h4>
+                <p className="text-[10px] text-[#666666] line-clamp-1 mt-0.5">
+                  {pl.songsCount || pl.songs?.length || 0} songs · {pl.ownerName || 'ChillWithYT'}
+                </p>
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ─── 6. RADIO (12 Language-Based Stations: Instant Autoplay) ──────────── */}
+      <section id="radio-section" className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Radio className="w-5 h-5 text-[#FF0000]" />
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <span>Language & Regional Radio</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#FF0000]/15 text-[#FF0000] border border-[#FF0000]/30">
+                  Infinite 24/7
+                </span>
+              </h2>
+              <p className="text-xs text-[#666666] mt-0.5">
+                Click any station for an endless, non-repeating stream tailored by language and vibe.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          {LANGUAGE_RADIO_STATIONS.slice(0, 12).map((station) => (
+            <div
+              key={station.id}
+              onClick={() => radioEngine.startLanguageStation(station.id)}
+              className="group cursor-pointer rounded-xl p-3 bg-[#111114] hover:bg-[#1A1A20] border border-white/[0.07] hover:border-[#FF0000]/40 transition flex flex-col justify-between shadow-sm relative overflow-hidden"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-2xl">{station.flag}</span>
+                <span className="w-2 h-2 rounded-full bg-[#FF0000] group-hover:animate-ping" />
+              </div>
+
+              <div className="mt-3">
+                <h4 className="text-xs font-bold text-white group-hover:text-[#FF0000] transition truncate">
+                  {station.name}
+                </h4>
+                <p className="text-[10px] text-[#666666] line-clamp-1 mt-0.5">
+                  {station.language}
+                </p>
+              </div>
+
+              <div className="mt-2.5 pt-2 border-t border-white/[0.05] flex items-center justify-between">
+                <span className="text-[9px] font-mono text-[#FF0000] font-bold">ON AIR</span>
+                <Play className="w-3 h-3 text-white fill-white group-hover:text-[#FF0000] group-hover:fill-[#FF0000] transition" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── 7. RECOMMENDED FOR YOU (Daily Mixes) ───────────────────────────── */}
+      <section className="space-y-4 pb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-amber-400" />
+            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+              Recommended For You
+            </h2>
+          </div>
+          <button
+            onClick={() => setIsSmartModalOpen(true)}
+            className="text-xs text-[#FF0000] hover:text-red-400 font-bold flex items-center gap-1 cursor-pointer transition"
+          >
+            <span>Custom Mix</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+          {DAILY_MIX_CONFIGS.slice(0, 6).map((mix) => {
+            const isPlayingThis = playingMixId === mix.id;
+            return (
+              <div
+                key={mix.id}
+                onClick={() => handlePlayDailyMix(mix)}
+                className="group cursor-pointer rounded-xl p-2.5 bg-[#111114] hover:bg-[#1A1A20] border border-white/[0.07] hover:border-white/15 transition flex flex-col justify-between shadow-sm relative overflow-hidden"
+              >
+                <div className="relative aspect-square rounded-lg overflow-hidden mb-2 bg-[#0E0E12] border border-white/5">
+                  <ArtworkImage
+                    src={mix.coverImage}
+                    alt={mix.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                  />
+                  <div className="absolute top-2 left-2 bg-black/80 backdrop-blur-md px-1.5 py-0.5 rounded text-[9px] font-bold text-[#FF0000] border border-white/10">
+                    {mix.vibe}
+                  </div>
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                    <div className="w-9 h-9 rounded-full bg-[#FF0000] text-white flex items-center justify-center shadow-lg">
+                      {isPlayingThis ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Play className="w-4 h-4 fill-current ml-0.5" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-bold text-white truncate group-hover:text-[#FF0000] transition">
+                    {mix.title}
+                  </h4>
+                  <p className="text-[10px] text-[#666666] line-clamp-1 mt-0.5">
+                    {mix.subtitle}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 

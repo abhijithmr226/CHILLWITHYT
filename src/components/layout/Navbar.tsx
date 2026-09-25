@@ -188,44 +188,24 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, onSearc
   ];
 
   return (
-    <header className="sticky top-0 z-30 w-full h-16 bg-[#212121] border-b border-[#272727] px-4 lg:px-8 select-none">
-      <div className="h-full flex items-center justify-between gap-3 sm:gap-4">
+    <header className="sticky top-0 z-40 w-full h-16 bg-[#0A0A0C] border-b border-white/[0.07] px-4 lg:px-6 select-none">
+      <div className="h-full max-w-[1440px] mx-auto flex items-center justify-between gap-4">
         {/* Brand Logo */}
         <div 
           onClick={() => onNavigate('/')} 
           className="flex items-center gap-2.5 cursor-pointer group shrink-0"
         >
-          <div className="w-9 h-9 rounded-xl overflow-hidden shadow-[0_0_20px_rgba(255,0,0,0.4)] group-hover:scale-105 transition shrink-0 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg overflow-hidden shadow-[0_0_15px_rgba(255,0,0,0.35)] group-hover:scale-105 transition shrink-0 flex items-center justify-center bg-black">
             <img
               src="/icon.png"
               alt="ChillWithYT Logo"
               className="w-full h-full object-cover"
             />
           </div>
-          <span className="text-lg font-extrabold tracking-tight text-white flex items-center">
+          <span className="text-base font-extrabold tracking-tight text-white flex items-center">
             ChillWith<span className="text-[#FF0000]">YT</span>
           </span>
         </div>
-
-        {/* Desktop Nav Links */}
-        <nav className="hidden md:flex items-center gap-1 shrink-0">
-          {navLinks.map((link) => {
-            const active = currentPath === link.path;
-            return (
-              <button
-                key={link.path}
-                onClick={() => onNavigate(link.path)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                  active
-                    ? 'bg-[#FF0000]/10 text-white border border-[#FF0000]/30 shadow-sm'
-                    : 'text-[#AAAAAA] hover:text-white hover:bg-[#272727] border border-transparent'
-                }`}
-              >
-                {link.label}
-              </button>
-            );
-          })}
-        </nav>
 
         {/* Center Search Input with Instant Autocomplete Dropdown */}
         <div className="flex-1 max-w-md lg:max-w-xl relative hidden sm:block mx-4">
@@ -373,50 +353,37 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, onSearc
           {/* Mobile Search Button */}
           <button
             onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
-            className="sm:hidden p-2 rounded-xl bg-[#272727] text-[#AAAAAA] hover:text-white"
+            className="sm:hidden p-2 rounded-lg bg-[#141418] text-[#A1A1A1] hover:text-white border border-white/[0.07]"
             title="Search songs"
           >
             <Search className="w-4 h-4 text-[#FF0000]" />
           </button>
 
-          <button
-            onClick={() => onNavigate('/rooms')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition cursor-pointer ${
-              currentPath === '/rooms'
-                ? 'bg-[#FF0000] border-[#FF0000] text-white shadow-[0_0_15px_rgba(255,0,0,0.4)]'
-                : 'bg-[#272727] border-[#383838] text-white hover:bg-[#333333]'
-            }`}
-            title="Listen music together with friends"
-          >
-            <Users className="w-3.5 h-3.5 text-[#FF4D4D]" />
-            <span className="hidden sm:inline">Listen With Friends</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          </button>
-
+          {/* Create Room Button (Accent Red) */}
           <button
             onClick={() => store.setState({ isCreateRoomModalOpen: true })}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#272727] hover:bg-[#333333] border border-[#383838] hover:border-[#FF0000]/60 text-white text-xs font-semibold transition cursor-pointer"
-            title="Create your own room"
+            className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-lg bg-[#FF0000] hover:bg-[#E50914] text-white text-xs font-bold transition shadow-sm cursor-pointer"
+            title="Create a Listening Room"
           >
-            <Plus className="w-3.5 h-3.5 text-[#FF0000]" />
+            <Plus className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Create Room</span>
           </button>
 
-          {onOpenInstallModal && (
-            <button
-              onClick={onOpenInstallModal}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600/20 to-orange-500/20 hover:from-red-600/30 hover:to-orange-500/30 border border-red-500/30 hover:border-red-500/60 text-white text-xs font-semibold transition cursor-pointer group"
-              title="Add ChillWithYT to PC Desktop / Phone Home Screen"
-            >
-              <Download className="w-3.5 h-3.5 text-[#FF4D4D] group-hover:scale-110 transition" />
-              <span className="hidden lg:inline">Add to Home Screen</span>
-            </button>
-          )}
+          {/* Settings Shortcut Button */}
+          <button
+            onClick={() => onNavigate('/settings')}
+            className="p-2 rounded-lg bg-[#141418] hover:bg-[#1A1A20] text-[#A1A1A1] hover:text-white border border-white/[0.07] transition cursor-pointer"
+            title="Settings"
+          >
+            <Disc className="w-4 h-4 text-[#777777] hover:text-white" />
+          </button>
 
+          {/* User Profile or Sign In */}
           {state.isAuthenticated && state.currentUser ? (
             <div
               onClick={() => onNavigate('/profile')}
-              className="flex items-center gap-2 p-1 pl-2 rounded-xl bg-[#272727] border border-[#383838] hover:border-[#4F4F4F] cursor-pointer transition"
+              className="flex items-center gap-2 p-1 pl-2 rounded-lg bg-[#141418] border border-white/[0.07] hover:border-white/20 cursor-pointer transition"
+              title="View profile"
             >
               <span className="text-xs font-medium text-white hidden md:inline">
                 {state.currentUser.displayName}
@@ -424,13 +391,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, onSearc
               <img
                 src={resolveAvatar(state.currentUser.avatarUrl, state.currentUser.username || state.currentUser.id)}
                 alt={state.currentUser.displayName}
-                className="w-7 h-7 rounded-lg object-cover ring-1 ring-[#383838]"
+                className="w-7 h-7 rounded-md object-cover ring-1 ring-white/10"
               />
             </div>
           ) : (
             <button
               onClick={() => store.setState({ isAuthModalOpen: true })}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#272727] hover:bg-[#383838] border border-[#383838] text-xs font-semibold text-white transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#141418] hover:bg-[#1A1A20] border border-white/[0.07] text-xs font-semibold text-white transition cursor-pointer"
             >
               <LogIn className="w-3.5 h-3.5 text-[#FF0000]" />
               <span>Sign In</span>

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useStore } from '../../store/useStore';
 import { audioManager, PlaybackState } from '../../services/audio/AudioManager';
 import { radioEngine, RadioState } from '../../services/audio/RadioEngine';
-import { RadioHUD } from './RadioHUD';
 import {
   Play,
   Pause,
@@ -15,11 +14,10 @@ import {
   VolumeX,
   ListMusic,
   Maximize2,
-  Sliders,
-  Radio,
-  Users
+  Radio as RadioIcon,
+  Users,
+  Quote,
 } from 'lucide-react';
-
 import { ArtworkImage } from '../../utils/artwork';
 
 export const GlobalBottomPlayer: React.FC = () => {
@@ -30,16 +28,9 @@ export const GlobalBottomPlayer: React.FC = () => {
     duration: audioManager.getState().duration,
   }));
   const [radio, setRadio] = useState<RadioState>(radioEngine.getState());
-  const [showResumeBanner, setShowResumeBanner] = useState(
-    audioManager.hasRestoredSession()
-  );
 
   useEffect(() => {
-    const unsubAudio = audioManager.subscribe((s) => {
-      setPlayback(s);
-      // Hide banner once actual playback starts
-      if (s.isPlaying) setShowResumeBanner(false);
-    });
+    const unsubAudio = audioManager.subscribe(setPlayback);
     const unsubProgress = audioManager.subscribeProgress(setProgress);
     const unsubRadio = radioEngine.subscribe(setRadio);
     return () => {
@@ -49,7 +40,7 @@ export const GlobalBottomPlayer: React.FC = () => {
     };
   }, []);
 
-  const { currentSong, isPlaying, currentTime, duration, volume, isMuted, isShuffled, repeatMode } = playback;
+  const { currentSong, isPlaying, duration, volume, isMuted, isShuffled, repeatMode } = playback;
 
   if (!currentSong) return null;
 
@@ -61,11 +52,6 @@ export const GlobalBottomPlayer: React.FC = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleResume = () => {
-    setShowResumeBanner(false);
-    audioManager.play();
-  };
-
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const target = parseFloat(e.target.value);
     audioManager.seek(target);
@@ -75,28 +61,34 @@ export const GlobalBottomPlayer: React.FC = () => {
     radioEngine.toggleRadio(currentSong);
   };
 
+  const totalDuration = progress.duration || duration || 100;
+  const currentPosition = progress.currentTime || 0;
+  const progressPercent = totalDuration > 0 ? (currentPosition / totalDuration) * 100 : 0;
+
   return (
-    <div className="hidden md:block fixed bottom-0 left-0 right-0 z-[60] bg-[#212121] border-t border-[#272727] select-none transition-all">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 px-4 py-2.5 sm:px-6">
-        {/* Left: Track Information */}
-        <div className="flex items-center gap-3 w-1/4 min-w-[180px]">
+    <div className="hidden md:block fixed bottom-0 left-0 right-0 z-40 bg-[#0E0E12] border-t border-white/[0.07] select-none h-20 transition-all">
+      <div className="max-w-[1440px] h-full mx-auto flex items-center justify-between gap-4 px-4 lg:px-6">
+        {/* LEFT: Album artwork 52x52, song title, artist, like */}
+        <div className="flex items-center gap-3 w-1/4 min-w-[200px] max-w-[280px]">
           <div
             onClick={() => store.setState({ isFullScreenPlayerOpen: true })}
-            className="relative cursor-pointer group shrink-0"
+            className="relative cursor-pointer group shrink-0 w-[52px] h-[52px] rounded-lg overflow-hidden ring-1 ring-white/10 shadow-md bg-black"
           >
             <ArtworkImage
               song={currentSong}
               alt={currentSong.title}
-              className="w-12 h-12 rounded-lg object-cover ring-1 ring-[#272727]"
+              className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg flex items-center justify-center">
-              <Maximize2 className="w-4 h-4 text-white" />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+              <Maximize2 className="w-3.5 h-3.5 text-white" />
             </div>
           </div>
+
           <div className="min-w-0 flex-1">
             <h4
               onClick={() => store.setState({ isFullScreenPlayerOpen: true })}
-              className="text-xs sm:text-sm font-semibold text-white truncate hover:underline cursor-pointer"
+              className="text-xs font-bold text-[#F5F5F5] truncate hover:underline cursor-pointer leading-snug"
+              title={currentSong.title}
             >
               {currentSong.title}
             </h4>
@@ -106,34 +98,37 @@ export const GlobalBottomPlayer: React.FC = () => {
                 window.history.pushState({}, '', `/artist/${encodeURIComponent(currentSong.artist)}`);
                 window.dispatchEvent(new PopStateEvent('popstate'));
               }}
-              className="text-[11px] sm:text-xs text-[#AAAAAA] hover:text-[#FF4D4D] hover:underline cursor-pointer truncate"
-              title={`View ${currentSong.artist} page`}
+              className="text-[11px] text-[#A1A1A1] hover:text-[#FF0000] hover:underline cursor-pointer truncate mt-0.5"
+              title={currentSong.artist}
             >
               {currentSong.artist}
             </p>
-            {/* Radio HUD inline bar */}
             {radio.isRadioMode && (
-              <RadioHUD variant="bar" className="mt-0.5" />
+              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-[#FF0000] uppercase tracking-wider mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FF0000] animate-pulse" />
+                Radio Active
+              </span>
             )}
           </div>
+
           <button
             onClick={() => store.toggleLikeSong(currentSong.id, currentSong)}
-            className={`p-1.5 rounded-lg transition ${
-              isLiked ? 'text-[#FF0000] hover:text-[#CC0000]' : 'text-[#717171] hover:text-white'
+            className={`p-1.5 rounded-lg transition shrink-0 cursor-pointer ${
+              isLiked ? 'text-[#FF0000] hover:text-[#E50914]' : 'text-[#666666] hover:text-white'
             }`}
-            title="Like song"
+            title={isLiked ? 'Unlike song' : 'Like song'}
           >
             <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
           </button>
         </div>
 
-        {/* Center: Controls & Scrubber */}
+        {/* CENTER: Controls & Scrubber */}
         <div className="flex flex-col items-center gap-1.5 flex-1 max-w-xl">
-          <div className="flex items-center gap-4 sm:gap-6">
+          <div className="flex items-center gap-5">
             <button
               onClick={() => audioManager.toggleShuffle()}
-              className={`p-1 rounded transition ${
-                isShuffled ? 'text-[#FF0000]' : 'text-[#717171] hover:text-white'
+              className={`p-1 rounded transition cursor-pointer ${
+                isShuffled ? 'text-[#FF0000]' : 'text-[#777777] hover:text-white'
               }`}
               title="Shuffle"
             >
@@ -142,7 +137,7 @@ export const GlobalBottomPlayer: React.FC = () => {
 
             <button
               onClick={() => audioManager.previous()}
-              className="p-1 text-[#AAAAAA] hover:text-white transition"
+              className="p-1 text-[#A1A1A1] hover:text-white transition cursor-pointer"
               title="Previous"
             >
               <SkipBack className="w-4 h-4 fill-current" />
@@ -150,7 +145,7 @@ export const GlobalBottomPlayer: React.FC = () => {
 
             <button
               onClick={() => audioManager.togglePlayPause()}
-              className="w-9 h-9 rounded-full bg-[#FF0000] hover:bg-[#CC0000] text-white flex items-center justify-center shadow-[0_0_12px_rgba(255,0,0,0.35)] transition hover:scale-105 active:scale-95"
+              className="w-9 h-9 rounded-full bg-[#FF0000] hover:bg-[#E50914] text-white flex items-center justify-center shadow-[0_0_12px_rgba(255,0,0,0.35)] transition hover:scale-105 active:scale-95 cursor-pointer"
               title={isPlaying ? 'Pause' : 'Play'}
             >
               {isPlaying ? (
@@ -162,7 +157,7 @@ export const GlobalBottomPlayer: React.FC = () => {
 
             <button
               onClick={() => audioManager.next()}
-              className="p-1 text-[#AAAAAA] hover:text-white transition"
+              className="p-1 text-[#A1A1A1] hover:text-white transition cursor-pointer"
               title="Next"
             >
               <SkipForward className="w-4 h-4 fill-current" />
@@ -170,8 +165,8 @@ export const GlobalBottomPlayer: React.FC = () => {
 
             <button
               onClick={() => audioManager.setRepeatMode()}
-              className={`p-1 rounded transition ${
-                repeatMode !== 'off' ? 'text-[#FF0000]' : 'text-[#717171] hover:text-white'
+              className={`p-1 rounded transition cursor-pointer ${
+                repeatMode !== 'off' ? 'text-[#FF0000]' : 'text-[#777777] hover:text-white'
               }`}
               title={`Repeat: ${repeatMode}`}
             >
@@ -180,70 +175,71 @@ export const GlobalBottomPlayer: React.FC = () => {
           </div>
 
           {/* Time Scrubber */}
-          <div className="w-full flex items-center gap-2">
-            <span className="text-[10px] font-mono text-[#717171] w-8 text-right">
-              {formatTime(progress.currentTime)}
+          <div className="w-full flex items-center gap-2.5">
+            <span className="text-[10px] font-mono text-[#777777] w-9 text-right tabular-nums">
+              {formatTime(currentPosition)}
             </span>
             <input
               type="range"
               min="0"
-              max={progress.duration || duration || 100}
-              value={progress.currentTime || 0}
+              max={totalDuration}
+              value={currentPosition}
               onChange={handleProgressChange}
-              className="flex-1"
+              className="flex-1 h-1 bg-[#222228] rounded-full appearance-none cursor-pointer accent-[#FF0000]"
               style={{
-                '--range-progress': `${((progress.currentTime || 0) / (progress.duration || duration || 100)) * 100}%`,
+                '--range-progress': `${progressPercent}%`,
               } as React.CSSProperties}
             />
-            <span className="text-[10px] font-mono text-[#717171] w-8 text-left">
-              {formatTime(progress.duration || duration)}
+            <span className="text-[10px] font-mono text-[#777777] w-9 text-left tabular-nums">
+              {formatTime(totalDuration)}
             </span>
           </div>
         </div>
 
-        {/* Right: Aux Tools */}
-        <div className="hidden md:flex items-center justify-end gap-2.5 w-1/4 min-w-[180px]">
-          {/* Radio Toggle */}
+        {/* RIGHT: Volume, Queue, Lyrics, Room, Fullscreen */}
+        <div className="flex items-center justify-end gap-2.5 w-1/4 min-w-[200px] max-w-[280px]">
+          {/* Radio toggle */}
           <button
             onClick={handleRadioToggle}
-            className={`p-1.5 rounded-lg transition flex items-center gap-1 text-[11px] font-semibold ${
+            className={`p-1.5 rounded-lg transition text-xs font-medium cursor-pointer flex items-center gap-1 ${
               radio.isRadioMode
                 ? 'text-[#FF0000] bg-[#FF0000]/10 border border-[#FF0000]/30'
-                : 'text-[#717171] hover:text-white hover:bg-[#272727]'
+                : 'text-[#888888] hover:text-white'
             }`}
-            title={radio.isRadioMode ? 'Stop Radio' : 'Start Radio — infinite nonstop music'}
+            title={radio.isRadioMode ? 'Stop Radio' : 'Start Radio'}
           >
-            <Radio className="w-4 h-4" />
-            <span className="hidden lg:inline">{radio.isRadioMode ? 'Radio ON' : 'Radio'}</span>
+            <RadioIcon className="w-3.5 h-3.5" />
           </button>
 
+          {/* Lyrics quick toggle */}
+          <button
+            onClick={() => store.setState({ isFullScreenPlayerOpen: true })}
+            className="p-1.5 rounded-lg text-[#888888] hover:text-white transition cursor-pointer"
+            title="Lyrics & Visualizer"
+          >
+            <Quote className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Listening Room shortcut */}
           <button
             onClick={() => store.setState({ isCreateRoomModalOpen: true })}
-            className="p-1.5 rounded-lg text-[#AAAAAA] hover:text-white hover:bg-[#272727] transition flex items-center gap-1.5"
+            className="p-1.5 rounded-lg text-[#888888] hover:text-[#FF0000] transition cursor-pointer"
             title="Create Listening Room with current song"
           >
-            <Users className="w-4 h-4 text-[#FF4D4D]" />
-            <span className="hidden xl:inline text-xs font-semibold">Room</span>
+            <Users className="w-3.5 h-3.5" />
           </button>
 
-          <button
-            onClick={() => store.setState({ isVisualizerOptionsOpen: true })}
-            className="p-1.5 rounded-lg text-[#AAAAAA] hover:text-white hover:bg-[#272727] transition"
-            title="Visualizer Options"
-          >
-            <Sliders className="w-4 h-4" />
-          </button>
-
+          {/* Queue Drawer toggle */}
           <button
             onClick={() => store.setState({ isQueueDrawerOpen: !state.isQueueDrawerOpen })}
-            className={`relative p-1.5 rounded-lg transition ${
+            className={`relative p-1.5 rounded-lg transition cursor-pointer ${
               state.isQueueDrawerOpen
                 ? 'text-[#FF0000] bg-[#FF0000]/10'
-                : 'text-[#AAAAAA] hover:text-white hover:bg-[#272727]'
+                : 'text-[#888888] hover:text-white'
             }`}
             title="Queue"
           >
-            <ListMusic className="w-4 h-4" />
+            <ListMusic className="w-3.5 h-3.5" />
             {playback.queue.length > 0 && (
               <span className="absolute -top-1 -right-1 bg-[#FF0000] text-white text-[9px] font-bold px-1 rounded-full min-w-[14px] text-center shadow">
                 {playback.queue.length}
@@ -251,16 +247,16 @@ export const GlobalBottomPlayer: React.FC = () => {
             )}
           </button>
 
-          {/* Volume */}
-          <div className="flex items-center gap-2 pl-1 border-l border-[#272727]">
+          {/* Volume slider */}
+          <div className="flex items-center gap-1.5 pl-1.5 border-l border-white/[0.07]">
             <button
               onClick={() => audioManager.toggleMute()}
-              className="text-[#AAAAAA] hover:text-white transition"
+              className="text-[#888888] hover:text-white transition cursor-pointer"
             >
               {isMuted || volume === 0 ? (
-                <VolumeX className="w-4 h-4 text-red-400" />
+                <VolumeX className="w-3.5 h-3.5 text-red-500" />
               ) : (
-                <Volume2 className="w-4 h-4" />
+                <Volume2 className="w-3.5 h-3.5" />
               )}
             </button>
             <input
@@ -270,19 +266,20 @@ export const GlobalBottomPlayer: React.FC = () => {
               step="0.01"
               value={isMuted ? 0 : (volume ?? 1)}
               onChange={(e) => audioManager.setVolume(parseFloat(e.target.value))}
-              className="w-20"
+              className="w-16 h-1 bg-[#222228] rounded-full appearance-none cursor-pointer accent-[#FF0000]"
               style={{
                 '--range-progress': `${(isMuted ? 0 : (volume ?? 1)) * 100}%`,
               } as React.CSSProperties}
             />
           </div>
 
+          {/* Fullscreen player */}
           <button
             onClick={() => store.setState({ isFullScreenPlayerOpen: true })}
-            className="p-1.5 rounded-lg text-[#AAAAAA] hover:text-white hover:bg-[#272727] transition"
-            title="Full-screen player"
+            className="p-1.5 rounded-lg text-[#888888] hover:text-white transition cursor-pointer"
+            title="Open Fullscreen Player"
           >
-            <Maximize2 className="w-4 h-4" />
+            <Maximize2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
